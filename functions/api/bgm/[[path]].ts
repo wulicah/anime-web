@@ -79,7 +79,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
   try {
     let body: BodyInit | undefined
     if (request.method !== 'GET' && request.method !== 'HEAD') {
-      body = request.body
+      body = request.body ?? undefined
     }
 
     const response = await fetchWithRetry(

@@ -68,13 +68,19 @@ npm run preview
 ```
 anime-web/
 ├── .trae/documents/         # PRD 和技术架构文档
+├── functions/               # Cloudflare Pages Functions
+│   ├── api/bgm/[[path]].ts  # Bangumi API 代理（CORS + 重试 + 缓存）
+│   ├── img.ts               # 图片代理（域名白名单 + 30 天缓存）
+│   └── tsconfig.json
 ├── public/
+│   ├── data/seasons.json     # 季度静态补全数据
 │   ├── icons/               # PWA 图标
-│   └── manifest.webmanifest
+│   └── favicon.svg
 ├── src/
 │   ├── api/                 # API 抽象层
 │   │   ├── bangumi.ts       # Bangumi.tv 公开 API
 │   │   ├── local.ts         # IndexedDB 本地 API
+│   │   ├── platforms.ts     # 播出平台名称映射
 │   │   └── types.ts
 │   ├── assets/styles/       # 全局样式 + 设计 token
 │   ├── components/
@@ -82,18 +88,21 @@ anime-web/
 │   │   ├── common/          # 通用组件（按钮/骨架/空态/错误）
 │   │   ├── layout/          # 头部/TabBar/安装提示
 │   │   └── library/         # 追番库相关（评分/状态切换）
-│   ├── composables/         # useQuery 等 Composable
+│   ├── composables/         # useQuery / useImage / useInfiniteScroll / useLazyImage
+│   ├── data/                # 季度元信息
 │   ├── db/                  # Dexie 数据库
 │   ├── router/              # 路由配置
-│   ├── stores/              # Pinia 状态
-│   ├── views/               # 7 个页面
+│   ├── stores/              # Pinia 状态（library / preferences）
+│   ├── views/               # 8 个页面 + 404
 │   ├── App.vue
 │   └── main.ts
+├── worker/                  # Cloudflare Worker（备选部署方案）
 ├── index.html
 ├── vite.config.ts
 ├── tailwind.config.ts
 ├── tsconfig.json
 ├── package.json
+├── DEPLOY.md                # 部署指南
 └── README.md
 ```
 
@@ -117,8 +126,6 @@ npm run dev         # 启动 dev server (HMR)
 npm run build       # 类型检查 + 生产构建
 npm run preview     # 预览生产构建
 npm run typecheck   # 仅类型检查
-npm run lint        # ESLint
-npm run format      # Prettier
 ```
 
 ---

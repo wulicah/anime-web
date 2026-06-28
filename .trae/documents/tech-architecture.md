@@ -26,7 +26,7 @@ flowchart TB
     end
 
     subgraph 表现层
-        V[Vue 3 Views<br/>7 个页面]
+        V[Vue 3 Views<br/>8 个页面]
         C[Components<br/>业务组件 + 通用组件]
         S[Stores (Pinia)<br/>追番/主题/搜索]
     end
@@ -77,17 +77,7 @@ flowchart TB
 | **Vue Router** | ^4.4 | 路由 | 官方路由，懒加载、导航守卫、动态路由 |
 | **VueUse** | ^11 | 工具集 | 复用常用 composable（useStorage / useDebounceFn / useIntersectionObserver），少造轮子 |
 | **Tailwind CSS** | ^3.4 | 样式 | utility-first + JIT、按需生成、生产包小；与设计 token 配合做主题 |
-| **vue-i18n** | ^9.13 | 国际化 | 单文件组件、组合式 API、按需加载 |
-| **VeeValidate + Zod** | vee ^4 / zod ^3 | 表单/校验 | 类型安全、Schema 复用，前后端一致 |
-| **vue-sonner** | latest | 通知 | 比 Element Notification 轻、不依赖 UI 库 |
-| **@vueuse/gesture** | ^2 | 手势 | 移动端 swipe/drag |
 | **vite-plugin-pwa** | ^0.20 | PWA | Workbox 封装，开箱即用 |
-| **Vitest** | ^2 | 单元测试 | 与 Vite 同一作者，配置零成本 |
-| **@vue/test-utils** | ^2 | 组件测试 | 官方测试工具 |
-| **Playwright** | ^1.47 | E2E 测试 | 跨浏览器、移动端模拟 |
-| **ESLint + Prettier** | latest | 代码规范 | vue-eslint-parser、@vue/eslint-config-typescript |
-| **unplugin-auto-import** | ^0.18 | 自动导入 | Vue / VueUse API 自动 import，写代码更干净 |
-| **unplugin-vue-components** | ^0.27 | 组件自动注册 | Element Plus / 自定义组件按需自动注册 |
 | **dayjs** | ^1.11 | 日期 | 比 moment 轻、支持国际化、不可变设计 |
 | **Dexie.js** | ^4 | IndexedDB 封装 | 比原生 IDB API 简单 10 倍、TS 友好、Promise 化 |
 
@@ -132,15 +122,13 @@ const routes = [
 ```ts
 // src/stores/
 ├── library.ts     // 我的追番（4 状态 + 评分 + 备注）
-├── preferences.ts // 主题/默认页/推送
-├── search.ts      // 搜索历史
-└── ui.ts          // 全局 UI 状态（侧边栏、模态框、loading）
+└── preferences.ts // 主题/默认页
 ```
 
 **Store 设计原则**：
 - **小**：一个 Store 一个领域，不做"全局 mega store"。
 - **异步放外面**：Pinia 的 action 调 API 抽象层，不在 store 里写 fetch。
-- **持久化靠插件**：`@pinia-plugin-persistedstate` 自动写 sessionStorage（library 走 IndexedDB 例外）。
+- **持久化**：preferences 走 localStorage（`useStorage`），library 走 IndexedDB（Dexie）。
 
 **关键 store 示例**：
 
@@ -285,37 +273,40 @@ workbox: {
 anime-web/
 ├── .trae/
 │   └── documents/         # PRD 和技术文档
+├── functions/             # Cloudflare Pages Functions
+│   ├── api/bgm/[[path]].ts # Bangumi API 代理
+│   ├── img.ts             # 图片代理
+│   └── tsconfig.json
 ├── public/
-│   ├── icons/             # PWA 图标（多尺寸）
-│   └── manifest.webmanifest
+│   ├── data/seasons.json  # 季度静态补全数据
+│   ├── icons/             # PWA 图标
+│   └── favicon.svg
 ├── src/
 │   ├── api/               # API 抽象层
 │   │   ├── bangumi.ts
 │   │   ├── local.ts
+│   │   ├── platforms.ts   # 播出平台名称映射
 │   │   └── types.ts
 │   ├── assets/
-│   │   ├── fonts/
 │   │   └── styles/
 │   │       ├── tokens.css       # 设计 token（CSS 变量）
 │   │       ├── base.css         # 重置 + 基础样式
 │   │       └── tailwind.css
 │   ├── components/
-│   │   ├── common/        # Button / Card / Tabs / Modal 等基础组件
 │   │   ├── anime/         # AnimeCard / AnimeSchedule / PlatformBadge
+│   │   ├── common/        # Button / Card / 骨架 / 空态
 │   │   ├── library/       # LibraryItem / StatusPicker / RatingStars
-│   │   └── layout/        # AppHeader / MobileTabBar / SideBar
-│   ├── composables/       # useAnimeQuery / useInfiniteScroll / useTheme
+│   │   └── layout/        # AppHeader / MobileTabBar
+│   ├── composables/       # useQuery / useImage / useInfiniteScroll / useLazyImage
+│   ├── data/              # 季度元信息
 │   ├── db/                # Dexie 数据库
 │   ├── router/
-│   ├── stores/            # Pinia stores
-│   ├── utils/             # 纯函数工具（日期、格式化）
-│   ├── views/             # 7 个页面
+│   ├── stores/            # library / preferences
+│   ├── views/             # 8 个页面 + 404
 │   ├── App.vue
 │   ├── main.ts
 │   └── env.d.ts
-├── tests/
-│   ├── unit/
-│   └── e2e/
+├── worker/                # Cloudflare Worker（备选部署方案）
 ├── index.html
 ├── vite.config.ts
 ├── tailwind.config.ts
@@ -352,24 +343,18 @@ anime-web/
 - **PR**：每完成一个 M 阶段开一个 PR，自查后请求合并
 
 ### 7.2 编码风格
-- ESLint + Prettier，保存自动格式化
 - `<script setup lang="ts">` 必写，props/emits 用 type-only
 - 组件 props 必填校验，emit 必填声明
 - 业务组件不带样式（除布局外），样式走 Tailwind utility class
 - 任何 async 函数 try/catch 包裹并 toast 错误
 
-### 7.3 测试策略
-- 关键 Composable：单测覆盖率 > 80%
-- 业务组件：核心交互（追番、评分）覆盖
-- E2E：3 条核心流程（首页→详情→追番→我的追番可见）
-
-### 7.4 性能预算
+### 7.3 性能预算
 - main bundle < 200KB gzipped
 - 首屏 LCP < 2.5s（4G 模拟）
 - 路由切换 < 200ms
 - 图片全部 WebP + lazy
 
-### 7.5 错误处理
+### 7.4 错误处理
 - 全局 `app.config.errorHandler` 兜底
 - API 错误 → 友好 toast + 重试按钮
 - 路由 404 → 友好页 + 跳转首页按钮
