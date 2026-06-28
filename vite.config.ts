@@ -124,15 +124,16 @@ export default defineConfig(({ mode }) => {
         //   ③ 移动设备访问 Cloudflare Workers 经常被墙
         //   ④ 公共 CORS 代理（corsproxy.io/allorigins）已对 api.bgm.tv 失效
         //
-        // 方案：dev 直接走 Cloudflare Worker（用户已部署的 fanlu-bgm.wulicah.workers.dev）
+        // 方案：设置 VITE_PROXY_TARGET 指向你部署的 Worker
+        //   例如：https://fanlu-bgm.你的名字.workers.dev/api/bgm
         //   生产环境用部署平台 rewrites 转发（同 /api/bgm 策略）
         //
-        // 优先级：环境变量 VITE_PROXY_TARGET → 默认 Cloudflare Worker
+        // 优先级：环境变量 VITE_PROXY_TARGET
         '/api/bgm': {
           target:
             process.env.VITE_PROXY_TARGET ||
             env.VITE_PROXY_TARGET ||
-            'https://fanlu-bgm.wulicah.workers.dev/api/bgm',
+            '',
           changeOrigin: true,
           secure: true,
           rewrite: (path) => {

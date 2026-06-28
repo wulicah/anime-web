@@ -21,11 +21,15 @@ interface Env {
 const BANGUMI_API = 'https://api.bgm.tv'
 const CACHE_TTL = 300 // 5 分钟
 
+const ALLOWED_ORIGIN = 'https://fanlu.pages.dev'
+
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, Authorization, User-Agent',
   'Access-Control-Max-Age': '86400',
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
 }
 
 function jsonError(status: number, message: string, extra: Record<string, unknown> = {}) {
@@ -89,8 +93,7 @@ export const onRequest: PagesFunction<Env> = async (context) => {
 
     return newResponse
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error('[API Proxy Error]', targetUrl, message)
-    return jsonError(502, '代理请求失败：' + message, { target: targetUrl })
+    console.error('[API Proxy Error]', targetUrl, err instanceof Error ? err.message : String(err))
+    return jsonError(502, '代理服务暂时不可用，请稍后重试')
   }
 }
