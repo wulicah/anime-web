@@ -1,0 +1,9 @@
+# Cloudflare Pages 自定义安全头
+# _headers 文件优先级高于 Functions 中的 headers.set()
+/api/*
+  Access-Control-Allow-Origin: https://fanlu.pages.dev
+  X-Frame-Options: DENY
+  X-Content-Type-Options: nosniff
+  Access-Control-Allow-Methods: GET, POST, PUT, PATCH, DELETE, OPTIONS
+  Access-Control-Allow-Headers: Content-Type, Authorization
+  Access-Control-Max-Age: 86400
