@@ -38,11 +38,11 @@ npm run preview
 | 页面 | 路由 | 功能 |
 |------|------|------|
 | 首页 | `/` | 当天新番 + 周维度切换 |
-| 新番时间表 | `/schedule` | 按周几分组的本季新番网格 |
 | 番剧详情 | `/anime/:id` | 信息头部 + 简介 + 标签 + 追番 + 评分 |
 | 我的追番 | `/library` | 4 状态：在看 / 想看 / 看过 / 弃番 |
 | 搜索 | `/search` | 300ms 防抖 + 最近搜索历史 |
 | 归档 | `/archive` | 历年春夏秋季新番入口（致敬 yuc.wiki） |
+| 季度归档 | `/archive/:year/:season` | 按季度浏览番剧列表 |
 | 个人中心 | `/profile` | 数据统计 + 主题切换 + 数据导出/清空 |
 
 ---
@@ -96,7 +96,6 @@ anime-web/
 │   ├── views/               # 8 个页面 + 404
 │   ├── App.vue
 │   └── main.ts
-├── worker/                  # Cloudflare Worker（备选部署方案）
 ├── index.html
 ├── vite.config.ts
 ├── tailwind.config.ts

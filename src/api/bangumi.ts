@@ -9,7 +9,6 @@ import type {
 // dev / prod 统一走相对路径 /api/bgm
 //   - dev: Vite proxy 转发
 //   - prod: Cloudflare Pages Functions 转发（节点在国内可达，避免直连 workers.dev 被墙）
-// Worker（fanlu-bgm）仅作为可选加速层，不强制要求
 // 设置 VITE_BANGUMI_BASE_URL 可覆盖默认路径
 const BASE_URL = (import.meta.env.VITE_BANGUMI_BASE_URL as string) || '/api/bgm'
 
@@ -47,8 +46,7 @@ async function doFetch<T>(url: string, init?: RequestInit): Promise<T> {
       return await fetch(fullUrl, {
         ...init,
         signal: controller.signal,
-        // 注意：dev 走 corsproxy.io，它不接受自定义 User-Agent 头（会 403）
-        // Bangumi API 的 UA 要求由 Worker / 生产代理处理，dev 走公共代理不带 UA
+        // Bangumi API 要求 User-Agent 头，由代理层（Pages Functions / Vite proxy）处理
         headers: {
           Accept: 'application/json',
           ...(init?.headers || {}),

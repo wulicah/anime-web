@@ -7,8 +7,8 @@ import { ref, onMounted, onUnmounted, watch, type Ref } from 'vue'
  * - 配合 useInfiniteScroll 用：滚动到底再加 12 个，不会一次渲染 50 个
  *
  * 用法：
- *   const { loadImage, markLoaded } = useLazyImage({ maxConcurrent: 4 })
- *   <img :src="loaded ? realSrc : ''" @load="markLoaded(id)" />
+ *   const { visible, loaded, target } = useLazyImage({ maxConcurrent: 4 })
+ *   <img ref="target" :src="visible ? realSrc : ''" />
  */
 
 interface QueueItem {

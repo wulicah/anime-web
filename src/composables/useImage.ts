@@ -67,7 +67,7 @@ export function buildSrcset(img: ImageSet | undefined): string | undefined {
 }
 
 /**
- * 选最佳 url（带 Worker 代理）
+ * 选最佳 url（带代理）
  * - 移动端 1x → 400w
  * - 移动端 2x → 800w
  * - 桌面端 → 1200w

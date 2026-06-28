@@ -8,7 +8,7 @@
  * ① 浏览器 CORS 限制
  * ② 国内浏览器无法直连 api.bgm.tv（CORS + 网络不通）
  * ③ 移动设备 / 国内直连 workers.dev 经常被墙
- *    → 用户访问 fanlu.pages.dev (CF 节点国内可达)
+ *    → 用户访问你的 pages.dev 域名 (CF 节点国内可达)
  *    → 代理逻辑在 CF 海外节点执行（能直连 api.bgm.tv）
  *
  * 缓存策略：

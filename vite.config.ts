@@ -134,7 +134,7 @@ export default defineConfig(({ mode }) => {
           secure: true,
           rewrite: (path) => {
             // path = /api/bgm/v0/subjects/520633
-            // Worker 路径：/api/bgm/v0/subjects/520633（去掉 /api/bgm 前缀）
+            // 代理路径：/api/bgm/v0/subjects/520633（去掉 /api/bgm 前缀）
             return path.replace(/^\/api\/bgm/, '')
           },
           configure: (proxy) => {
@@ -146,7 +146,7 @@ export default defineConfig(({ mode }) => {
                   JSON.stringify({
                     error: 'API_PROXY_ERROR',
                     message: err.message,
-                    tip: '检查 VITE_PROXY_TARGET 和 Worker 部署',
+                    tip: '检查 VITE_PROXY_TARGET 配置',
                   }),
                 )
               }
@@ -174,7 +174,7 @@ export default defineConfig(({ mode }) => {
           changeOrigin: true,
           secure: true,
           rewrite: (path) => {
-            // 已指向 Worker（路径含 /img）时不重写
+            // 已指向自建代理（路径含 /img）时不重写
             const target =
               process.env.VITE_IMG_PROXY_TARGET || env.VITE_IMG_PROXY_TARGET || ''
             if (target) return path
