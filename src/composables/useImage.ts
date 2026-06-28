@@ -1,0 +1,117 @@
+/**
+ * Bangumi 图片源工具
+ *
+ * 国内访问 lain.bgm.tv 被墙/超慢，需要代理：
+ * - dev：vite proxy 转发（默认 wsrv.nl，专业图片代理，CDN 缓存）
+ *   - 实测：corsproxy.io 对 lain.bgm.tv 返回 403，allorigins 超时
+ *   - wsrv.nl 用 ?w=N&output=webp 压缩图片
+ * - prod：建议部署 Cloudflare Worker（worker/src/index.ts），边缘缓存 30 天
+ *   - Worker 部署后在 vite.config.ts 改 VITE_IMG_PROXY_TARGET 指向它
+ *
+ * URL 格式：
+ * - 原：https://lain.bgm.tv/pic/cover/l/3c/36/570584_9w55f.jpg
+ * - 代理：/img?url=https%3A%2F%2Flain.bgm.tv%2F...%2F570584_9w55f.jpg&w=400&output=webp&q=70
+ *
+ * 不使用 Bangumi 自带的 /r/N/ 尺寸路径（wsrv.nl 不支持该路径，实测 404）
+ * 由 wsrv.nl / Worker 用 ?w=N 参数动态出图
+ */
+
+export interface ImageSet {
+  small: string
+  grid: string
+  common: string
+  medium: string
+  large: string
+}
+
+/**
+ * 图片代理路径前缀（相对路径）
+ * - dev：vite proxy 转发到 wsrv.nl 或 Cloudflare Worker
+ * - prod：部署平台 rewrites 转发
+ * 不直连代理域名，避免被墙
+ */
+const IMG_PREFIX = '/img'
+
+/**
+ * 把 Bangumi 图片 URL 转成代理 URL
+ * - 用相对路径 /img，由 dev proxy / prod rewrites 转发
+ * - wsrv.nl 用 ?w=N 动态出图，比 Bangumi 自带的 /r/N/ 灵活
+ * - 已经是代理 URL / data: / blob: 的不重复转
+ *
+ * URL 格式：
+ * - 原：https://lain.bgm.tv/pic/cover/l/3c/36/570584_9w55f.jpg
+ * - 代理：/img?url=https%3A%2F%2Flain.bgm.tv%2Fpic%2Fcover%2Fl%2F3c%2F36%2F570584_9w55f.jpg&w=400
+ */
+function proxyImage(url: string | undefined | null, size = 400): string {
+  if (!url) return ''
+  // 已经是代理 URL / data: / blob: 不处理
+  if (url.startsWith(IMG_PREFIX) || url.startsWith('data:') || url.startsWith('blob:')) {
+    return url
+  }
+  // 只代理 lain.bgm.tv 域名
+  if (!url.startsWith('http://lain.bgm.tv') && !url.startsWith('https://lain.bgm.tv')) {
+    return url
+  }
+  // 升级到 https（wsrv.nl 对 https 回源更稳，避免混合内容警告）
+  const https = url.replace(/^http:\/\//, 'https://')
+  return `${IMG_PREFIX}?url=${encodeURIComponent(https)}&w=${size}&output=webp&q=70`
+}
+
+/** 构建 srcset 字符串（用于 <img srcset>） */
+export function buildSrcset(img: ImageSet | undefined): string | undefined {
+  if (!img) return undefined
+  if (!img.large) return undefined
+  // srcset 用同一张原图，浏览器根据视口选 sizes 匹配
+  // wsrv.nl 通过 ?w=N 动态出不同尺寸
+  return [
+    `${proxyImage(img.large, 200)} 200w`,
+    `${proxyImage(img.large, 400)} 400w`,
+    `${proxyImage(img.large, 600)} 600w`,
+    `${proxyImage(img.large, 800)} 800w`,
+    `${proxyImage(img.large, 1200)} 1200w`,
+  ].join(', ')
+}
+
+/**
+ * 选最佳 url（带 Worker 代理）
+ * - 移动端 1x → 400w
+ * - 移动端 2x → 800w
+ * - 桌面端 → 1200w
+ */
+export function pickBest(
+  img: ImageSet | undefined,
+  options: { dpr?: number; isMobile?: boolean } = {},
+): string {
+  if (!img) return ''
+  const { dpr = 1, isMobile = true } = options
+  let chosen: string
+  let size = 400
+  if (dpr <= 1) {
+    chosen = img.large || img.common || img.medium || img.small || ''
+    size = 400
+  } else if (dpr <= 2) {
+    chosen = img.large || img.common || img.medium || ''
+    size = isMobile ? 600 : 800
+  } else {
+    chosen = img.large || img.common || ''
+    size = 1200
+  }
+  return proxyImage(chosen, size)
+}
+
+/** 直接代理一个 URL（用于详情页大图、列表小图） */
+export function proxyBangumiImage(url: string | undefined | null, size = 600): string {
+  // 详情页大图用 600 宽（足够清晰，不会太大）
+  // 列表用 200-300 宽，Grid 卡片用 200 宽
+  return proxyImage(url, size)
+}
+
+/** 加载图片直到 onload（用于预加载） */
+export function preloadImage(url: string): Promise<void> {
+  return new Promise((resolve) => {
+    const img = new Image()
+    img.onload = () => resolve()
+    img.onerror = () => resolve()
+    img.src = proxyImage(url, 400)
+  })
+}

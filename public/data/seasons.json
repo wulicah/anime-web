@@ -1,0 +1,21 @@
+{
+  "_README": "本文件用于补充 Bangumi API 数据缺失/未来季度的番剧。修改后刷新页面即可生效。格式参考下方示例，缺失平台用空数组。",
+  "2026-Summer": {
+    "year": 2026,
+    "season": "Summer",
+    "source": "manual",
+    "animes": []
+  },
+  "2026-Spring": {
+    "year": 2026,
+    "season": "Spring",
+    "source": "manual",
+    "animes": []
+  },
+  "2025-Autumn": {
+    "year": 2025,
+    "season": "Autumn",
+    "source": "manual",
+    "animes": []
+  }
+}

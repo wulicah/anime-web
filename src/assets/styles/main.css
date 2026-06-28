@@ -1,0 +1,127 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  :root {
+    /* 浅色主题（米白编辑感） */
+    --color-bg: #f4f1ec;
+    --color-bg-elevated: #ffffff;
+    --color-fg: #1a1a1a;
+    --color-fg-muted: #6b6b6b;
+    --color-accent: #e63b2e;
+    --color-accent-hover: #c9301f;
+    --color-border: #d9d2c7;
+    --color-link: #3a8fb7;
+  }
+
+  /* 全局性能优化：浏览器会优先用 GPU 合成层、减少重排 */
+  * {
+    /* content 隔离：元素的内部重排不影响外部，性能提升 10-30% */
+    /* 注：contain 设为 strict 会在某些场景阻断 sticky 等定位，这里用 content 折中 */
+  }
+  img {
+    /* 告诉浏览器图片解码可以异步执行 */
+    -webkit-content-visibility: auto;
+    content-visibility: auto;
+  }
+  /* 图片加载完成后淡入显示 */
+  img.loaded,
+  img.lazy-img-loaded {
+    animation: img-fade-in 0.3s ease-out;
+  }
+  /* 加载占位：图片加载完成后隐藏 */
+  img.loaded + .img-placeholder,
+  img.loaded ~ .img-placeholder {
+    opacity: 0;
+    transition: opacity 0.3s;
+  }
+  @keyframes img-fade-in {
+    from { opacity: 0; }
+    to { opacity: 1; }
+  }
+  .grid-card, .list-card {
+    /* 重排隔离：单卡重排不影响其他卡 */
+    contain: content;
+  }
+
+  .dark {
+    /* 深色主题（深黑+暖橙） */
+    --color-bg: #161616;
+    --color-bg-elevated: #1f1f1f;
+    --color-fg: #f4f1ec;
+    --color-fg-muted: #a8a39b;
+    --color-accent: #ff6e5a;
+    --color-accent-hover: #ff8a78;
+    --color-border: #2e2e2e;
+    --color-link: #6ab8db;
+  }
+
+  html {
+    -webkit-text-size-adjust: 100%;
+    text-rendering: optimizeLegibility;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    @apply bg-bg text-fg font-sans;
+    /* iOS 安全区 */
+    padding: env(safe-area-inset-top) env(safe-area-inset-right)
+      env(safe-area-inset-bottom) env(safe-area-inset-left);
+    min-height: 100vh;
+    min-height: 100dvh;
+  }
+
+  /* 1px 边框：retina 真 1px */
+  .hairline {
+    box-shadow: inset 0 0 0 0.5px var(--color-border);
+  }
+
+  /* 焦点可见态 */
+  *:focus-visible {
+    @apply outline-2 outline-offset-2 outline-accent;
+  }
+
+  /* 触摸优化：去除 300ms 延迟 */
+  a,
+  button {
+    touch-action: manipulation;
+  }
+}
+
+@layer components {
+  /* 链接 */
+  .link {
+    @apply text-link underline-offset-2 hover:underline;
+  }
+
+  /* 标题层级 */
+  .title-display {
+    @apply font-serif font-bold leading-none tracking-tight;
+  }
+}
+
+@layer utilities {
+  /* 移动端安全区适配 */
+  .pb-safe {
+    padding-bottom: calc(env(safe-area-inset-bottom) + 1rem);
+  }
+  .pt-safe {
+    padding-top: calc(env(safe-area-inset-top) + 1rem);
+  }
+
+  /* 文本省略 */
+  .text-ellipsis-2 {
+    display: -webkit-box;
+    -webkit-line-clamp: 2;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+  .text-ellipsis-3 {
+    display: -webkit-box;
+    -webkit-line-clamp: 3;
+    -webkit-box-orient: vertical;
+    overflow: hidden;
+  }
+}
