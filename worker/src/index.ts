@@ -104,11 +104,9 @@ async function handleImageProxy(request: Request, ctx: ExecutionContext): Promis
 
     return response
   } catch (err) {
+    console.error('[IMG_UPSTREAM_ERROR]', err instanceof Error ? err.message : String(err))
     return new Response(
-      JSON.stringify({
-        error: 'IMG_UPSTREAM_ERROR',
-        message: err instanceof Error ? err.message : String(err),
-      }),
+      JSON.stringify({ error: 'IMG_UPSTREAM_ERROR', message: '图片代理暂时不可用，请稍后重试' }),
       {
         status: 502,
         headers: { 'Content-Type': 'application/json', ...corsHeaders() },
@@ -147,11 +145,9 @@ async function handleApiProxy(request: Request): Promise<Response> {
       headers: newHeaders,
     })
   } catch (err) {
+    console.error('[UPSTREAM_ERROR]', err instanceof Error ? err.message : String(err))
     return new Response(
-      JSON.stringify({
-        error: 'UPSTREAM_ERROR',
-        message: err instanceof Error ? err.message : String(err),
-      }),
+      JSON.stringify({ error: 'UPSTREAM_ERROR', message: '服务暂时不可用，请稍后重试' }),
       {
         status: 502,
         headers: { 'Content-Type': 'application/json', ...corsHeaders() },
@@ -160,11 +156,15 @@ async function handleApiProxy(request: Request): Promise<Response> {
   }
 }
 
+const ALLOWED_ORIGIN = 'https://fanlu.pages.dev'
+
 function corsHeaders(): Record<string, string> {
   return {
-    'Access-Control-Allow-Origin': '*',
+    'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
     'Access-Control-Allow-Methods': 'GET, POST, PUT, PATCH, DELETE, OPTIONS',
     'Access-Control-Allow-Headers': 'Content-Type, Authorization',
     'Access-Control-Max-Age': '86400',
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff',
   }
 }

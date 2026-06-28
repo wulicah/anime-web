@@ -21,11 +21,14 @@
  */
 
 const CACHE_TTL = 2592000 // 30 天
+const ALLOWED_ORIGIN = 'https://fanlu.pages.dev'
 
 const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
   'Access-Control-Allow-Methods': 'GET, OPTIONS',
   'Access-Control-Max-Age': '86400',
+  'X-Frame-Options': 'DENY',
+  'X-Content-Type-Options': 'nosniff',
 }
 
 export const onRequest: PagesFunction = async (context) => {
@@ -92,9 +95,8 @@ export const onRequest: PagesFunction = async (context) => {
 
     return newResponse
   } catch (err) {
-    const message = err instanceof Error ? err.message : String(err)
-    console.error('[Img Proxy Error]', wsrvUrl.toString(), message)
-    return new Response('图片代理失败: ' + message, {
+    console.error('[Img Proxy Error]', err instanceof Error ? err.message : String(err))
+    return new Response('图片代理暂时不可用，请稍后重试', {
       status: 502,
       headers: CORS_HEADERS,
     })
