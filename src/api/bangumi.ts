@@ -6,15 +6,12 @@ import type {
   BangumiEpisode,
 } from './types'
 
-// dev: 走 Vite proxy（/api/bgm → api.bgm.tv），绕开 CORS
-// prod: 直连 Cloudflare Worker，不走 Pages Functions（避免 CORS * 和额度盗用）
-//       Worker 已限制 CORS 仅为 fanlu.pages.dev，其他站点无法调用
-// 也可设置 VITE_BANGUMI_BASE_URL 覆盖默认 Worker URL
-const DEV_PROXY = '/api/bgm'
-const PROD_WORKER = 'https://fanlu-bgm.wulicah.workers.dev/api/bgm'
-const BASE_URL =
-  (import.meta.env.VITE_BANGUMI_BASE_URL as string) ||
-  (import.meta.env.PROD ? PROD_WORKER : DEV_PROXY)
+// dev / prod 统一走相对路径 /api/bgm
+//   - dev: Vite proxy 转发
+//   - prod: Cloudflare Pages Functions 转发（节点在国内可达，避免直连 workers.dev 被墙）
+// Worker（fanlu-bgm）仅作为可选加速层，不强制要求
+// 设置 VITE_BANGUMI_BASE_URL 可覆盖默认路径
+const BASE_URL = (import.meta.env.VITE_BANGUMI_BASE_URL as string) || '/api/bgm'
 
 /**
  * 通用 fetcher：处理 JSON 解析、错误抛出、UA 头、超时重试
