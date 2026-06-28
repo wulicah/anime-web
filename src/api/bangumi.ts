@@ -7,9 +7,14 @@ import type {
 } from './types'
 
 // dev: 走 Vite proxy（/api/bgm → api.bgm.tv），绕开 CORS
-// prod: 部署到 Vercel/Netlify/Cloudflare 时配置 rewrites 即可，调用方零改动
-// 也可设置 VITE_BANGUMI_BASE_URL 直接走 Worker（最快路径，无需 dev server 代理）
-const BASE_URL = (import.meta.env.VITE_BANGUMI_BASE_URL as string) || '/api/bgm'
+// prod: 直连 Cloudflare Worker，不走 Pages Functions（避免 CORS * 和额度盗用）
+//       Worker 已限制 CORS 仅为 fanlu.pages.dev，其他站点无法调用
+// 也可设置 VITE_BANGUMI_BASE_URL 覆盖默认 Worker URL
+const DEV_PROXY = '/api/bgm'
+const PROD_WORKER = 'https://fanlu-bgm.wulicah.workers.dev/api/bgm'
+const BASE_URL =
+  (import.meta.env.VITE_BANGUMI_BASE_URL as string) ||
+  (import.meta.env.PROD ? PROD_WORKER : DEV_PROXY)
 
 /**
  * 通用 fetcher：处理 JSON 解析、错误抛出、UA 头、超时重试
