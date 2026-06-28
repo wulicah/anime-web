@@ -12,7 +12,7 @@
  *    → 代理逻辑在 CF 海外节点执行（能直连 api.bgm.tv）
  *
  * 缓存策略：
- * - GET 请求边缘缓存 5 分钟
+ * - GET 请求边缘缓存 5 分钟（bangumi 数据更新不频繁）
  */
 interface Env {
   // 预留
@@ -20,6 +20,7 @@ interface Env {
 
 const BANGUMI_API = 'https://api.bgm.tv'
 const CACHE_TTL = 300
+const MAX_RETRIES = 2
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
@@ -40,6 +41,30 @@ function jsonError(status: number, message: string) {
   )
 }
 
+async function fetchWithRetry(
+  targetUrl: string,
+  options: RequestInit,
+  retries: number,
+): Promise<Response> {
+  let lastError: unknown
+  for (let i = 0; i <= retries; i++) {
+    try {
+      const response = await fetch(targetUrl, options)
+      if (response.ok || response.status < 500) {
+        return response
+      }
+      // 5xx 错误，重试
+      lastError = new Error(`Upstream ${response.status}`)
+    } catch (err) {
+      lastError = err
+    }
+    if (i < retries) {
+      await new Promise((r) => setTimeout(r, 500 * (i + 1)))
+    }
+  }
+  throw lastError
+}
+
 export const onRequest: PagesFunction<Env> = async (context) => {
   const { request } = context
   const url = new URL(request.url)
@@ -57,15 +82,22 @@ export const onRequest: PagesFunction<Env> = async (context) => {
       body = request.body
     }
 
-    const response = await fetch(targetUrl, {
-      method: request.method,
-      headers: {
-        'User-Agent': 'FanLu/0.1 (https://github.com/wulicah/anime-web)',
-        Accept: 'application/json',
+    const response = await fetchWithRetry(
+      targetUrl,
+      {
+        method: request.method,
+        headers: {
+          'User-Agent': 'FanLu/0.1 (https://github.com/wulicah/anime-web)',
+          Accept: 'application/json',
+          ...(request.headers.get('Authorization')
+            ? { Authorization: request.headers.get('Authorization')! }
+            : {}),
+        },
+        body,
+        redirect: 'follow',
       },
-      body,
-      redirect: 'follow',
-    })
+      MAX_RETRIES,
+    )
 
     const newResponse = new Response(response.body, response)
     for (const [k, v] of Object.entries(CORS_HEADERS)) {
