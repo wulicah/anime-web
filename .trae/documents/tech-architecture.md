@@ -26,7 +26,7 @@ flowchart TB
     end
 
     subgraph 表现层
-        V[Vue 3 Views<br/>8 个页面]
+        V[Vue 3 Views<br/>7 个页面]
         C[Components<br/>业务组件 + 通用组件]
         S[Stores (Pinia)<br/>追番/主题/搜索]
     end
@@ -100,11 +100,11 @@ flowchart TB
 // src/router/index.ts
 const routes = [
   { path: '/', name: 'home', component: () => import('@/views/HomeView.vue'), meta: { title: '番录 · 本季新番' } },
-  { path: '/schedule', name: 'schedule', component: () => import('@/views/ScheduleView.vue'), meta: { title: '新番时间表' } },
   { path: '/anime/:id', name: 'anime-detail', component: () => import('@/views/AnimeDetailView.vue'), meta: { title: '番剧详情' } },
-  { path: '/library', name: 'library', component: () => import('@/views/LibraryView.vue'), meta: { title: '我的追番', requiresStorage: true } },
+  { path: '/library', name: 'library', component: () => import('@/views/LibraryView.vue'), meta: { title: '我的追番' } },
   { path: '/search', name: 'search', component: () => import('@/views/SearchView.vue'), meta: { title: '搜索' } },
   { path: '/archive', name: 'archive', component: () => import('@/views/ArchiveView.vue'), meta: { title: '归档' } },
+  { path: '/archive/:year/:season', name: 'archive-season', component: () => import('@/views/ArchiveSeasonView.vue'), meta: { title: '季度归档' } },
   { path: '/profile', name: 'profile', component: () => import('@/views/ProfileView.vue'), meta: { title: '个人中心' } },
   { path: '/:pathMatch(.*)*', name: 'not-found', component: () => import('@/views/NotFoundView.vue') },
 ]
@@ -112,7 +112,6 @@ const routes = [
 
 **关键设计**：
 - 所有页面都用 `() => import(...)` 懒加载，首屏只加载 `Home` 一个 chunk。
-- `meta.requiresStorage` 标记需要 IndexedDB 的页面，在 `router.beforeEach` 里检查并给出友好提示。
 - 路由切换动画用 `<RouterView v-slot>` + `<Transition>` 实现 12px 上移淡入。
 
 ---
@@ -191,14 +190,19 @@ export const localApi = {
 **核心模式**：`useSWR` 风格的 Composable。
 
 ```ts
-// src/composables/useAnimeQuery.ts
-export function useAnimeQuery(id: MaybeRef<number>) {
-  return useQuery({
-    key: () => ['anime', unref(id)],
-    query: () => bangumiApi.anime(unref(id)),
-    staleTime: 1000 * 60 * 60 * 24, // 24h
-  })
-}
+// src/composables/useQuery.ts
+export function useQuery<T>(options: {
+  key: () => string
+  query: () => Promise<T>
+  staleTime?: number
+}) { /* ... */ }
+
+// 使用示例
+const { data, isLoading, error } = useQuery({
+  key: () => `anime-${id}`,
+  query: () => bangumiApi.anime(id),
+  staleTime: 1000 * 60 * 5, // 5 分钟
+})
 ```
 
 ### 5.2 IndexedDB（通过 Dexie）
@@ -210,7 +214,7 @@ import Dexie, { type Table } from 'dexie'
 export interface LibraryItem {
   id?: number
   animeId: number
-  status: 'watching' | 'planned' | 'completed' | 'dropped'
+  status: 'watching' | 'planned' | 'completed' | 'dropped' | 'none'
   rating: number | null
   note: string
   createdAt: number
@@ -249,16 +253,21 @@ workbox: {
     {
       urlPattern: /^https:\/\/api\.bgm\.tv\/v0\/subjects\/\d+$/,
       handler: 'StaleWhileRevalidate',
-      options: { cacheName: 'anime-detail', expiration: { maxAgeSeconds: 86400 } },
+      options: { cacheName: 'anime-detail', expiration: { maxEntries: 200, maxAgeSeconds: 86400 * 7 } },
+    },
+    {
+      urlPattern: /^https:\/\/api\.bgm\.tv\/calendar$/,
+      handler: 'StaleWhileRevalidate',
+      options: { cacheName: 'anime-calendar', expiration: { maxEntries: 1, maxAgeSeconds: 86400 } },
     },
     {
       urlPattern: /^https:\/\/api\.bgm\.tv\/v0\/search/,
       handler: 'NetworkFirst',
-      options: { cacheName: 'anime-search', networkTimeoutSeconds: 3 },
+      options: { cacheName: 'anime-search', networkTimeoutSeconds: 3, expiration: { maxEntries: 50, maxAgeSeconds: 86400 } },
     },
     {
-      urlPattern: /\.(?:png|jpg|webp|svg)$/,
-      handler: 'CacheFirst',
+      urlPattern: /\/img\?.*url=/,
+      handler: 'StaleWhileRevalidate',
       options: { cacheName: 'images', expiration: { maxEntries: 200, maxAgeSeconds: 2592000 } },
     },
   ],
@@ -289,20 +298,18 @@ anime-web/
 │   │   └── types.ts
 │   ├── assets/
 │   │   └── styles/
-│   │       ├── tokens.css       # 设计 token（CSS 变量）
-│   │       ├── base.css         # 重置 + 基础样式
-│   │       └── tailwind.css
+│   │       └── main.css          # 设计 token + 重置 + 基础样式
 │   ├── components/
-│   │   ├── anime/         # AnimeCard / AnimeSchedule / PlatformBadge
-│   │   ├── common/        # Button / Card / 骨架 / 空态
+│   │   ├── anime/         # AnimeCard / AnimeCell
+│   │   ├── common/        # EmptyState / ErrorState / SkeletonList / LazyImage / IconTheme
 │   │   ├── library/       # LibraryItem / StatusPicker / RatingStars
-│   │   └── layout/        # AppHeader / MobileTabBar
+│   │   └── layout/        # AppHeader / MobileTabBar / InstallPrompt
 │   ├── composables/       # useQuery / useImage / useInfiniteScroll / useLazyImage
 │   ├── data/              # 季度元信息
 │   ├── db/                # Dexie 数据库
 │   ├── router/
 │   ├── stores/            # library / preferences
-│   ├── views/             # 8 个页面 + 404
+│   ├── views/             # 7 个页面 + 404
 │   ├── App.vue
 │   ├── main.ts
 │   └── env.d.ts
@@ -423,4 +430,4 @@ anime-web/
 - [ ] 暗色模式对比度达标
 - [ ] README 含项目介绍、截图、运行步骤、技术栈
 - [ ] LICENSE（MIT）
-- [ ] GitHub Actions 自动部署到 Vercel / Netlify / Cloudflare Pages
+- [x] GitHub 仓库已公开
