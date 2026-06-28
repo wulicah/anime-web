@@ -3,17 +3,11 @@
  *
  * 国内访问 lain.bgm.tv 被墙/超慢，需要代理：
  * - dev：vite proxy 转发（默认 wsrv.nl，专业图片代理，CDN 缓存）
- *   - 实测：corsproxy.io 对 lain.bgm.tv 返回 403，allorigins 超时
- *   - wsrv.nl 用 ?w=N&output=webp 压缩图片
- * - prod：建议部署 Cloudflare Worker（worker/src/index.ts），边缘缓存 30 天
- *   - Worker 部署后在 vite.config.ts 改 VITE_IMG_PROXY_TARGET 指向它
+ * - prod：Cloudflare Pages Functions（functions/img.ts），边缘缓存 30 天
  *
  * URL 格式：
  * - 原：https://lain.bgm.tv/pic/cover/l/3c/36/570584_9w55f.jpg
  * - 代理：/img?url=https%3A%2F%2Flain.bgm.tv%2F...%2F570584_9w55f.jpg&w=400&output=webp&q=70
- *
- * 不使用 Bangumi 自带的 /r/N/ 尺寸路径（wsrv.nl 不支持该路径，实测 404）
- * 由 wsrv.nl / Worker 用 ?w=N 参数动态出图
  */
 
 export interface ImageSet {

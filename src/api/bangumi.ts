@@ -86,8 +86,6 @@ async function doFetch<T>(url: string, init?: RequestInit): Promise<T> {
   throw lastErr!
 }
 
-// ...后续 API 端点保持不变
-
 /**
  * Bangumi 公开 API 封装
  * @see https://bangumi.github.io/api/

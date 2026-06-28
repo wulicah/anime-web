@@ -14,10 +14,6 @@
  * 缓存策略：
  * - GET 请求边缘缓存 5 分钟（bangumi 数据更新不频繁）
  */
-interface Env {
-  // 预留
-}
-
 const BANGUMI_API = 'https://api.bgm.tv'
 const CACHE_TTL = 300
 const MAX_RETRIES = 2
@@ -65,7 +61,7 @@ async function fetchWithRetry(
   throw lastError
 }
 
-export const onRequest: PagesFunction<Env> = async (context) => {
+export const onRequest: PagesFunction = async (context) => {
   const { request } = context
   const url = new URL(request.url)
 

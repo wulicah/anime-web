@@ -306,7 +306,6 @@ anime-web/
 │   ├── App.vue
 │   ├── main.ts
 │   └── env.d.ts
-├── worker/                # Cloudflare Worker（备选部署方案）
 ├── index.html
 ├── vite.config.ts
 ├── tailwind.config.ts
