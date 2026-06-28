@@ -17,7 +17,7 @@ export default defineConfig(({ mode }) => {
       VitePWA({
         // 基础配置
         registerType: 'autoUpdate',
-        includeAssets: ['favicon.svg', 'apple-touch-icon.png'],
+        includeAssets: ['favicon.svg', 'icons/icon-192.svg'],
         manifest: {
           name: '番录 FanLu',
           short_name: '番录',
@@ -118,17 +118,13 @@ export default defineConfig(({ mode }) => {
       open: false,
       proxy: {
         // Bangumi API 代理
-        // 目标：解决 4 个问题
+        // 目标：解决 3 个问题
         //   ① 浏览器 CORS 限制
         //   ② 国内访问 api.bgm.tv 网络不通
-        //   ③ 移动设备访问 Cloudflare Workers 经常被墙
-        //   ④ 公共 CORS 代理（corsproxy.io/allorigins）已对 api.bgm.tv 失效
+        //   ③ 移动设备访问 workers.dev 经常被墙
         //
-        // 方案：设置 VITE_PROXY_TARGET 指向你部署的 Worker
-        //   例如：https://fanlu-bgm.你的名字.workers.dev/api/bgm
-        //   生产环境用部署平台 rewrites 转发（同 /api/bgm 策略）
-        //
-        // 优先级：环境变量 VITE_PROXY_TARGET
+        // 方案：设置 VITE_PROXY_TARGET 指向你的代理地址
+        //   生产环境用 Cloudflare Pages Functions 转发（同 /api/bgm 策略）
         '/api/bgm': {
           target:
             process.env.VITE_PROXY_TARGET ||
@@ -165,13 +161,11 @@ export default defineConfig(({ mode }) => {
         //
         // 策略：
         //   - dev 默认走 wsrv.nl（专业图片代理 + CDN 缓存，免部署即可开发）
-        //     实测：corsproxy.io 对 lain.bgm.tv 返回 403，allorigins 超时，codetabs 400
-        //   - 设置 VITE_IMG_PROXY_TARGET 指向已部署的 Worker（生产可选，自有缓存）
-        //   - Worker 代码见 worker/src/index.ts
+        //   - 设置 VITE_IMG_PROXY_TARGET 指向已部署的代理（生产可选，自有缓存）
         //
         // 路径格式：/img?url=encoded_url
         //   - wsrv.nl：重写为 /?url=encoded_url
-        //   - Worker：直接透传 /img?url=encoded_url
+        //   - 自建代理：直接透传 /img?url=encoded_url
         '/img': {
           target:
             process.env.VITE_IMG_PROXY_TARGET ||
