@@ -27,14 +27,28 @@ export interface ImageSet {
 const IMG_PREFIX = '/img'
 
 /**
+ * Bangumi CDN /r/N/ 路径前缀只支持以下预设尺寸，其它值返回 400
+ * 实测：100/200/400/600/800/1200 可用；120/150/300/500/1000 不可用
+ */
+const VALID_CDN_SIZES = [100, 200, 400, 600, 800, 1200]
+
+/** 把任意尺寸向上吸附到最近的合法 CDN 尺寸（保证清晰度不下降） */
+function snapToValidCdnSize(size: number): number {
+  for (const s of VALID_CDN_SIZES) {
+    if (s >= size) return s
+  }
+  return VALID_CDN_SIZES[VALID_CDN_SIZES.length - 1]
+}
+
+/**
  * 把 Bangumi 图片 URL 转成代理 URL
  * - 用相对路径 /img，由 dev proxy / prod rewrites 转发
- * - wsrv.nl 用 ?w=N 动态出图，比 Bangumi 自带的 /r/N/ 灵活
+ * - 用 Bangumi CDN /r/N/ 路径前缀做服务端缩放（尺寸会吸附到合法值）
  * - 已经是代理 URL / data: / blob: 的不重复转
  *
  * URL 格式：
  * - 原：https://lain.bgm.tv/pic/cover/l/3c/36/570584_9w55f.jpg
- * - 代理：/img?url=https%3A%2F%2Flain.bgm.tv%2Fpic%2Fcover%2Fl%2F3c%2F36%2F570584_9w55f.jpg&w=400
+ * - 代理：/img?url=...&w=400&output=webp&q=70
  */
 function proxyImage(url: string | undefined | null, size = 400): string {
   if (!url) return ''
@@ -48,11 +62,13 @@ function proxyImage(url: string | undefined | null, size = 400): string {
   }
   // 升级到 https
   const https = url.replace(/^http:\/\//, 'https://')
+  // 吸附到合法 CDN 尺寸（如 120 → 200），否则 /r/120/ 会返回 400
+  const validSize = snapToValidCdnSize(size)
   // 用 Bangumi CDN /r/N/ 路径前缀做服务端缩放（原图 938KB → /r/200/ 仅 16KB）
-  // 先去掉已有的 /r/N/ 前缀（如有），再插入新的 size
+  // 先去掉已有的 /r/N/ 前缀（如有），再插入新的 validSize
   const baseUrl = https.replace(/^(https:\/\/lain\.bgm\.tv\/)r\/\d+\//, '$1')
-  const resized = baseUrl.replace(/^(https:\/\/lain\.bgm\.tv\/)/, `$1r/${size}/`)
-  return `${IMG_PREFIX}?url=${encodeURIComponent(resized)}&w=${size}&output=webp&q=70`
+  const resized = baseUrl.replace(/^(https:\/\/lain\.bgm\.tv\/)/, `$1r/${validSize}/`)
+  return `${IMG_PREFIX}?url=${encodeURIComponent(resized)}&w=${validSize}&output=webp&q=70`
 }
 
 /** 构建 srcset 字符串（用于 <img srcset>） */
