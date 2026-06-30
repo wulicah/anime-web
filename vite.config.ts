@@ -46,6 +46,8 @@ export default defineConfig(({ mode }) => {
         },
         // Workbox 运行时缓存
         workbox: {
+          skipWaiting: true,    // 新 SW 立即激活（避免用户卡在旧版）
+          clientsClaim: true,   // 通知所有标签页立即切换到新 SW
           globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
           navigateFallback: '/index.html',
           runtimeCaching: [
