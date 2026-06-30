@@ -82,7 +82,7 @@ export interface BangumiCalendar {
   items: BangumiCalendarItem[]
 }
 
-/** 搜索结果（`POST /v0/search/subjects` — 我们不用 POST 所以暂时空） */
+/** 搜索结果（`POST /v0/search/subjects` 响应体） */
 export interface BangumiSearchResponse {
   total: number
   limit: number
