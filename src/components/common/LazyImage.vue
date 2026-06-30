@@ -34,6 +34,22 @@ const realSrc = computed(() => proxyBangumiImage(props.src, props.width))
 const realSrcset = computed(() => buildSrcset(props.srcsetImg))
 const id = computed(() => props.src || '')
 
+/**
+ * sizes 属性：告诉浏览器图片实际渲染宽度，避免按 100vw 选图导致下载过大
+ * - list：容器 w-20 sm:w-24（80px / 96px），加 2x DPR 余量
+ * - grid：容器随断点变化（33vw → 25vw → 20vw → 16vw）
+ * - 默认/未指定：用 width prop 推算
+ */
+const sizes = computed(() => {
+  if (props.layout === 'list') {
+    return '(min-width: 640px) 96px, 80px'
+  }
+  if (props.layout === 'grid') {
+    return '(min-width: 1024px) 16vw, (min-width: 768px) 20vw, (min-width: 640px) 25vw, 33vw'
+  }
+  return `${props.width}px`
+})
+
 // 进入视口后加入下载队列
 watch(visible, (v) => {
   if (!v || loaded.value || !props.src) return
@@ -62,6 +78,7 @@ watch(visible, (v) => {
       v-if="visible && loaded"
       :src="realSrc"
       :srcset="realSrcset"
+      :sizes="sizes"
       :alt="alt"
       loading="eager"
       decoding="async"

@@ -46,23 +46,25 @@ function proxyImage(url: string | undefined | null, size = 400): string {
   if (!url.startsWith('http://lain.bgm.tv') && !url.startsWith('https://lain.bgm.tv')) {
     return url
   }
-  // 升级到 https（wsrv.nl 对 https 回源更稳，避免混合内容警告）
+  // 升级到 https
   const https = url.replace(/^http:\/\//, 'https://')
-  return `${IMG_PREFIX}?url=${encodeURIComponent(https)}&w=${size}&output=webp&q=70`
+  // 用 Bangumi CDN /r/N/ 路径前缀做服务端缩放（原图 938KB → /r/200/ 仅 16KB）
+  // 先去掉已有的 /r/N/ 前缀（如有），再插入新的 size
+  const baseUrl = https.replace(/^(https:\/\/lain\.bgm\.tv\/)r\/\d+\//, '$1')
+  const resized = baseUrl.replace(/^(https:\/\/lain\.bgm\.tv\/)/, `$1r/${size}/`)
+  return `${IMG_PREFIX}?url=${encodeURIComponent(resized)}&w=${size}&output=webp&q=70`
 }
 
 /** 构建 srcset 字符串（用于 <img srcset>） */
 export function buildSrcset(img: ImageSet | undefined): string | undefined {
   if (!img) return undefined
   if (!img.large) return undefined
-  // srcset 用同一张原图，浏览器根据视口选 sizes 匹配
-  // wsrv.nl 通过 ?w=N 动态出不同尺寸
+  // 精简为 3 档：list 容器最大 96px、grid 最大约 200px，2x DPR 下 400px 已足够
+  // 避免生成 800w/1200w 触发浏览器按 100vw 选图时下载过多大图
   return [
     `${proxyImage(img.large, 200)} 200w`,
     `${proxyImage(img.large, 400)} 400w`,
     `${proxyImage(img.large, 600)} 600w`,
-    `${proxyImage(img.large, 800)} 800w`,
-    `${proxyImage(img.large, 1200)} 1200w`,
   ].join(', ')
 }
 
