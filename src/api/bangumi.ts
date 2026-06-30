@@ -22,8 +22,8 @@ const BASE_URL = (import.meta.env.VITE_BANGUMI_BASE_URL as string) || '/api/bgm'
 const inFlight = new Map<string, Promise<unknown>>()
 
 async function fetcher<T>(url: string, init?: RequestInit): Promise<T> {
-  // 请求去重：相同 URL 在飞中复用 Promise
-  const inflightKey = url
+  // 请求去重：相同 URL + method + body 在飞中复用 Promise（POST 搜索需区分不同关键词）
+  const inflightKey = `${init?.method || 'GET'} ${url} ${init?.body || ''}`
   const existing = inFlight.get(inflightKey) as Promise<T> | undefined
   if (existing) return existing
 
@@ -101,11 +101,21 @@ export const bangumiApi = {
 
   /**
    * 搜索番剧
+   * - 端点：`POST /v0/search/subjects`（GET 该端点不存在，会返回 404 默认响应）
+   * - 请求体：`{ keyword, filter: { type: [2] }, size, offset }`，type=2 表示动画
+   * - 支持中文子串匹配，如搜"超市"/"吸烟"可命中"在超市后门吸烟的二人"
    */
   search: (keyword: string, limit = 20, offset = 0) =>
-    fetcher<BangumiSearchResponse>(
-      `/v0/search/subjects?keyword=${encodeURIComponent(keyword)}&limit=${limit}&offset=${offset}&type=2`,
-    ),
+    fetcher<BangumiSearchResponse>('/v0/search/subjects', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        keyword,
+        filter: { type: [2] },
+        size: limit,
+        offset,
+      }),
+    }),
 
   /**
    * 按月份浏览番剧
