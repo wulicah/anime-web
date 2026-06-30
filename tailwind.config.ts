@@ -30,9 +30,9 @@ export default {
         netflix: '#E50914',
       },
       fontFamily: {
-        serif: ['"Noto Serif SC"', '"Fraunces"', 'Georgia', 'serif'],
-        sans: ['"Noto Sans SC"', 'Inter', 'system-ui', 'sans-serif'],
-        mono: ['"JetBrains Mono"', 'ui-monospace', 'monospace'],
+        serif: ['"Songti SC"', '"STSong"', '"SimSun"', 'Georgia', 'serif'],
+        sans: ['-apple-system', 'BlinkMacSystemFont', '"PingFang SC"', '"Hiragino Sans GB"', '"Microsoft YaHei"', 'system-ui', 'sans-serif'],
+        mono: ['"Cascadia Code"', '"JetBrains Mono"', 'Consolas', 'ui-monospace', 'monospace'],
       },
       fontSize: {
         // 8px 基准字号体系
