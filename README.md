@@ -157,7 +157,7 @@ npm run typecheck   # 仅类型检查
    `vite-plugin-pwa` + Workbox 缓存策略：App Shell 预缓存、番剧详情 7 天 SWR、搜索 NetworkFirst 3s 超时降级、图片 CacheFirst 30 天。
 
 3. **性能优化怎么做的？**
-   路由懒加载、Tailwind JIT 按需生成、图片 lazy、Comlink 缓存（SWR 模式）、main bundle < 200KB gzipped。
+   路由懒加载、Tailwind JIT 按需生成、图片 lazy、useQuery 缓存（SWR 模式）、main bundle < 200KB gzipped。
 
 ---
 
