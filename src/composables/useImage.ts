@@ -48,7 +48,7 @@ function snapToValidCdnSize(size: number): number {
  *
  * URL 格式：
  * - 原：https://lain.bgm.tv/pic/cover/l/3c/36/570584_9w55f.jpg
- * - 代理：/img?url=...&w=400&output=webp&q=70
+ * - 代理：/img?url=...&w=400&output=webp&q=80
  */
 function proxyImage(url: string | undefined | null, size = 400): string {
   if (!url) return ''
@@ -68,7 +68,7 @@ function proxyImage(url: string | undefined | null, size = 400): string {
   // 先去掉已有的 /r/N/ 前缀（如有），再插入新的 validSize
   const baseUrl = https.replace(/^(https:\/\/lain\.bgm\.tv\/)r\/\d+\//, '$1')
   const resized = baseUrl.replace(/^(https:\/\/lain\.bgm\.tv\/)/, `$1r/${validSize}/`)
-  return `${IMG_PREFIX}?url=${encodeURIComponent(resized)}&w=${validSize}&output=webp&q=70`
+  return `${IMG_PREFIX}?url=${encodeURIComponent(resized)}&w=${validSize}&output=webp&q=80`
 }
 
 /** 构建 srcset 字符串（用于 <img srcset>） */
