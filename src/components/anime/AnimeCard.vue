@@ -127,13 +127,13 @@ function crewInfo(a: Item): CrewRow[] {
       class="flex gap-3 py-2 hover:bg-bg-elevated/30 transition-colors -mx-2 px-2"
       style="contain: content"
     >
-      <div class="shrink-0 w-24 sm:w-28 aspect-[5/7] overflow-hidden bg-bg-elevated">
+      <div class="shrink-0 w-28 sm:w-32 aspect-[5/7] overflow-hidden bg-bg-elevated">
         <LazyImage
           v-if="cover(anime)"
           :src="cover(anime)"
           :srcset-img="anime.images"
           :alt="displayName(anime)"
-          :width="160"
+          :width="200"
           layout="list"
           fit="contain"
         />
@@ -142,13 +142,8 @@ function crewInfo(a: Item): CrewRow[] {
         <h3 class="text-sm sm:text-base font-medium text-ellipsis-2 leading-snug group-hover:text-accent transition-colors">
           {{ displayName(anime) }}
         </h3>
-        <p v-if="anime.name && anime.name_cn && anime.name !== anime.name_cn" class="text-2xs text-fg-muted font-mono mt-0.5">
-          {{ anime.name }}
-        </p>
         <div class="mt-1 flex items-center flex-wrap gap-x-3 gap-y-1 text-2xs text-fg-muted">
-          <span v-if="airdate(anime) !== '未定'" class="font-mono">首播 {{ airdate(anime) }}</span>
           <span v-if="anime.eps || anime.total_episodes" class="font-mono">全 {{ anime.eps || anime.total_episodes }} 集</span>
-          <span v-if="score(anime)" class="text-accent font-mono">★ {{ score(anime) }}</span>
         </div>
         <div class="mt-1 flex flex-wrap gap-1.5">
           <span
@@ -161,6 +156,10 @@ function crewInfo(a: Item): CrewRow[] {
             :key="`t-${t}`"
             class="text-2xs px-1.5 py-0.5 text-accent/80 bg-accent/5 border border-accent/20"
           >{{ t }}</span>
+          <span
+            v-if="score(anime)"
+            class="text-2xs px-1.5 py-0.5 text-accent font-mono bg-accent/5 border border-accent/20"
+          >★ {{ score(anime) }}</span>
         </div>
         <dl v-if="crewInfo(anime).length" class="mt-1 grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-2xs">
           <template v-for="(row, idx) in crewInfo(anime).slice(0, 4)" :key="idx">
