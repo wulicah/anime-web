@@ -77,7 +77,8 @@ export function useQuery<T>(opts: UseQueryOptions<T>): UseQueryResult<T> {
 
   const run = async () => {
     const key = keyRef.value
-    status.value = 'loading'
+    // 仅在没有缓存数据时才显示 loading（有缓存则保持 success，后台刷新）
+    if (!data.value) status.value = 'loading'
     try {
       const result = await opts.query()
       data.value = result
@@ -87,7 +88,11 @@ export function useQuery<T>(opts: UseQueryOptions<T>): UseQueryResult<T> {
       status.value = 'success'
     } catch (e) {
       error.value = e instanceof Error ? e : new Error(String(e))
-      status.value = 'error'
+      // 缓存兜底：如果有旧数据，保留显示，不切换到 error 状态
+      // 这样 API 超时/失败时用户仍能看到上次的内容，而不是错误页
+      if (!data.value) {
+        status.value = 'error'
+      }
     }
   }
 

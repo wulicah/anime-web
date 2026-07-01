@@ -41,11 +41,11 @@ async function doFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const fullUrl = `${BASE_URL}${url}`
   const doFetch = async (): Promise<Response> => {
     const controller = new AbortController()
-    // 12s 超时：Bangumi API + CF Pages 代理链路实测 P95 ~10s
-    // - 8s 太短：calendar 端点经常 >8s，导致 AbortError 频发
-    // - 15s 太长：用户等待 15s 已放弃
-    // - 12s + 重试 1 次 = 最长 ~24s，平衡可用性与体验
-    const timeout = setTimeout(() => controller.abort(), 12000)
+    // 20s 超时：Bangumi /calendar 端点 P99 实测 ~15-18s
+    // - 8s/12s 都太短，导致 AbortError 频发，用户看到错误页
+    // - 20s + 重试间隔 500ms + 重试 1 次 = 最长 ~40s
+    // - 配合 IndexedDB 缓存兜底（useQuery 持久化），即使超时也有旧数据可显示
+    const timeout = setTimeout(() => controller.abort(), 20000)
     try {
       return await fetch(fullUrl, {
         ...init,
@@ -77,9 +77,10 @@ async function doFetch<T>(url: string, init?: RequestInit): Promise<T> {
       return res.json() as Promise<T>
     } catch (e) {
       lastErr = e instanceof Error ? e : new Error(String(e))
-      // 重试一次（仅对网络错误/超时）
+      // 重试一次（仅对网络错误/超时），延迟 500ms 避免连续请求被限流
       if (attempt === 0 && (e instanceof TypeError || (e as any)?.name === 'AbortError')) {
-        console.warn(`[Fetcher] ${url} 失败，重试 1 次:`, lastErr.message)
+        console.warn(`[Fetcher] ${url} 失败，500ms 后重试:`, lastErr.message)
+        await new Promise((r) => setTimeout(r, 500))
         continue
       }
       throw lastErr
