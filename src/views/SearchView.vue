@@ -96,15 +96,15 @@ function useHistoryItem(q: string) {
     <SkeletonList
       v-if="status === 'loading'"
       layout="grid"
-      :count="6"
-      cols="grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+      :count="8"
+      cols="grid-cols-3 sm:grid-cols-4"
     />
     <p v-else-if="status === 'error'" class="text-sm text-accent">
       搜索失败：{{ error?.message }}
     </p>
 
     <!-- 结果 -->
-    <ul v-else-if="results.length" class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
+    <ul v-else-if="results.length" class="grid grid-cols-3 sm:grid-cols-4 gap-3 md:gap-4">
       <li v-for="anime in results" :key="anime.id">
         <AnimeCard :anime="anime" layout="grid" />
       </li>
