@@ -88,7 +88,12 @@ watch(
       </p>
     </header>
 
-    <SkeletonList v-if="status === 'loading' && !items.length" :count="8" />
+    <SkeletonList
+      v-if="status === 'loading' && !items.length"
+      layout="grid"
+      :count="10"
+      cols="grid-cols-2 sm:grid-cols-3 md:grid-cols-4 lg:grid-cols-5"
+    />
     <ErrorState
       v-else-if="status === 'error'"
       :message="error?.message || '加载失败'"

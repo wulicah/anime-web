@@ -3,6 +3,7 @@ import { ref, watch } from 'vue'
 import { useDebounceFn } from '@vueuse/core'
 import { bangumiApi } from '@/api/bangumi'
 import AnimeCard from '@/components/anime/AnimeCard.vue'
+import SkeletonList from '@/components/common/SkeletonList.vue'
 import EmptyState from '@/components/common/EmptyState.vue'
 
 const keyword = ref('')
@@ -92,7 +93,12 @@ function useHistoryItem(q: string) {
     </section>
 
     <!-- 加载/错误 -->
-    <p v-if="status === 'loading'" class="text-sm text-fg-muted">搜索中…</p>
+    <SkeletonList
+      v-if="status === 'loading'"
+      layout="grid"
+      :count="4"
+      cols="grid-cols-1 sm:grid-cols-2"
+    />
     <p v-else-if="status === 'error'" class="text-sm text-accent">
       搜索失败：{{ error?.message }}
     </p>

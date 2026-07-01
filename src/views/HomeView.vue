@@ -214,7 +214,12 @@ function airTimeFor(day: number): string {
 
     <!-- 上半部：Grid 快速浏览（按周） -->
     <section class="py-6">
-      <SkeletonList v-if="calStatus === 'loading'" :count="6" />
+      <SkeletonList
+        v-if="calStatus === 'loading'"
+        layout="grid"
+        :count="6"
+        cols="grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6"
+      />
       <ErrorState
         v-else-if="calStatus === 'error'"
         :message="calError?.message || '加载失败'"
@@ -263,7 +268,11 @@ function airTimeFor(day: number): string {
         <span class="text-2xs text-fg-muted/50 font-mono">滚动到此处加载详细列表</span>
       </div>
       <template v-else>
-        <SkeletonList v-if="listStatus === 'loading' && !listItems.length" :count="6" />
+        <SkeletonList
+          v-if="listStatus === 'loading' && !listItems.length"
+          layout="list"
+          :count="6"
+        />
         <ErrorState
           v-else-if="listStatus === 'error'"
           :message="listError?.message || '加载失败'"
