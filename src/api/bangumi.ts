@@ -41,10 +41,11 @@ async function doFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const fullUrl = `${BASE_URL}${url}`
   const doFetch = async (): Promise<Response> => {
     const controller = new AbortController()
-    // 8s 超时：原 15s 太长，首屏用户等待 15s 已经放弃
-    // 8s 足够 Bangumi API + CF Pages 代理链路（实测 P95 < 5s）
-    // 配合下方重试 1 次，总等待最长 ~16s，比原 30s 体验好
-    const timeout = setTimeout(() => controller.abort(), 8000)
+    // 12s 超时：Bangumi API + CF Pages 代理链路实测 P95 ~10s
+    // - 8s 太短：calendar 端点经常 >8s，导致 AbortError 频发
+    // - 15s 太长：用户等待 15s 已放弃
+    // - 12s + 重试 1 次 = 最长 ~24s，平衡可用性与体验
+    const timeout = setTimeout(() => controller.abort(), 12000)
     try {
       return await fetch(fullUrl, {
         ...init,
