@@ -1,5 +1,5 @@
 <script setup lang="ts">
-import { computed, ref, watch } from 'vue'
+import { computed, ref, watch, onMounted } from 'vue'
 import AnimeCell from '@/components/anime/AnimeCell.vue'
 import AnimeCard from '@/components/anime/AnimeCard.vue'
 import SkeletonList from '@/components/common/SkeletonList.vue'
@@ -83,12 +83,35 @@ const activeItems = computed<CalendarItem[]>(() => {
 })
 const isEmpty = computed(() => calStatus.value === 'success' && activeItems.value.length === 0)
 
+/**
+ * Grid 首屏渲染策略：只渲染前 12 个，其余用 IntersectionObserver 懒加载
+ * - 当天番剧通常 10-20 部，一次渲染全部会让首屏图片排队严重
+ * - 12 个 + 并发 6 = 2 批，约 1.5s 内全部加载完
+ * - 其余的进入视口前 200px 触发渲染
+ */
+const GRID_FIRST_SCREEN = 12
+const showAllGrid = ref(false)
+const gridSentinel = ref<HTMLElement | null>(null)
+const displayGridItems = computed<CalendarItem[]>(() =>
+  showAllGrid.value ? activeItems.value : activeItems.value.slice(0, GRID_FIRST_SCREEN),
+)
+const hasMoreGrid = computed(() => activeItems.value.length > GRID_FIRST_SCREEN)
+
 /** 底部 List：按月拉当季全量（带 infobox/meta_tags） */
 const curSeason = getCurrentSeason()
 const SEASON_MONTHS: Record<string, [number, number]> = {
   Winter: [1, 3], Spring: [4, 6], Summer: [7, 9], Autumn: [10, 12],
 }
 const [startMonth, endMonth] = SEASON_MONTHS[curSeason.season] ?? [4, 6]
+
+/**
+ * 增量渲染：searchBySeason 支持按月回调
+ * - 第一个月数据回来就先填充 incrementalData，UI 立即渲染
+ * - 3 个月全部完成：useQuery 的 data 被填充（已去重+排序），listItems 自动切换
+ * - 二次访问：useQuery 命中缓存，直接显示完整数据
+ */
+const incrementalData = ref<BangumiListItem[]>([])
+const seenIds = new Set<number>()
 
 const {
   data: seasonAnimes,
@@ -97,16 +120,65 @@ const {
   refresh: listRefresh,
 } = useQuery<BangumiListItem[]>({
   key: `home-season-${curSeason.year}-${curSeason.season}`,
-  query: () => bangumiApi.searchBySeason(curSeason.year, startMonth, endMonth),
+  query: () =>
+    bangumiApi.searchBySeason(curSeason.year, startMonth, endMonth, (monthData) => {
+      // 增量 append（去重，避免不同月份重复番剧先显示两次）
+      const newItems = monthData.filter((a) => !seenIds.has(a.id))
+      newItems.forEach((a) => seenIds.add(a.id))
+      if (newItems.length) {
+        incrementalData.value = [...incrementalData.value, ...newItems]
+      }
+    }),
   staleTime: 1000 * 60 * 60 * 12,
 })
 
-const listItems = computed<BangumiListItem[]>(() => seasonAnimes.value ?? [])
+/**
+ * listItems：优先用 useQuery 的完整数据（已去重+排序），否则用增量数据
+ * - 首月数据回来：incrementalData 有值，UI 立即渲染
+ * - 3 个月全部完成：seasonAnimes 有值，自动切换到完整数据
+ */
+const listItems = computed<BangumiListItem[]>(() => seasonAnimes.value ?? incrementalData.value)
 
 /** 性能优化：分页加载（每屏 12 个，滚到底再加载） */
 const { visible: visibleList, hasMore, sentinel } = useInfiniteScroll<BangumiListItem>(listItems, {
   pageSize: 12,
   rootMargin: '400px',
+})
+
+/**
+ * 底部 List 延迟渲染：首屏不渲染 List 内容，滚动到位置前 400px 才激活
+ * - 首屏完全不发 List 区域的图片请求
+ * - API 请求仍然发，但图片懒到 List 进入视口才请求
+ */
+const listSectionRef = ref<HTMLElement | null>(null)
+const listActivated = ref(false)
+
+onMounted(() => {
+  if (!listSectionRef.value) return
+  const obs = new IntersectionObserver(
+    (entries) => {
+      if (entries[0]?.isIntersecting) {
+        listActivated.value = true
+        obs.disconnect()
+      }
+    },
+    { rootMargin: '400px 0px' },
+  )
+  obs.observe(listSectionRef.value)
+
+  // Grid sentinel：滚动到位置前 200px 时显示全部
+  if (gridSentinel.value) {
+    const gridObs = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          showAllGrid.value = true
+          gridObs.disconnect()
+        }
+      },
+      { rootMargin: '200px 0px' },
+    )
+    gridObs.observe(gridSentinel.value)
+  }
 })
 
 /** 当季标识 + 下一季倒计时 */
@@ -191,18 +263,26 @@ function airTimeFor(day: number): string {
           </span>
         </header>
         <ul class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
-          <li v-for="anime in activeItems" :key="`cell-${anime.id}`">
+          <li v-for="anime in displayGridItems" :key="`cell-${anime.id}`">
             <AnimeCell
               :anime="anime"
               :air-time="airTimeFor(activeDay)"
             />
+          </li>
+          <!-- 首屏只渲染 12 个，滚到此处再显示全部 -->
+          <li
+            v-if="hasMoreGrid && !showAllGrid"
+            ref="gridSentinel"
+            class="col-span-full py-4 text-center"
+          >
+            <span class="text-2xs text-fg-muted/50 font-mono">向下滚动加载更多 ({{ activeItems.length - GRID_FIRST_SCREEN }} 部)</span>
           </li>
         </ul>
       </template>
     </section>
 
     <!-- 下半部：详细 List（按月，展示制作人员） -->
-    <section class="py-6 border-t border-border">
+    <section ref="listSectionRef" class="py-6 border-t border-border">
       <header class="mb-3 flex items-baseline justify-between">
         <div>
           <h2 class="text-sm uppercase tracking-widest text-fg-muted">
@@ -214,28 +294,34 @@ function airTimeFor(day: number): string {
         </div>
       </header>
 
-      <SkeletonList v-if="listStatus === 'loading'" :count="6" />
-      <ErrorState
-        v-else-if="listStatus === 'error'"
-        :message="listError?.message || '加载失败'"
-        @retry="listRefresh"
-      />
-      <EmptyState
-        v-else-if="!listItems.length"
-        title="本季暂无数据"
-        description="Bangumi 暂未收录本季新番"
-      />
-      <ul v-else class="divide-y divide-border">
-        <li v-for="anime in visibleList" :key="`list-${anime.id}`">
-          <AnimeCard :anime="anime" layout="list" />
-        </li>
-        <li v-if="hasMore" ref="sentinel" class="py-6 text-center">
-          <span class="text-2xs text-fg-muted/50 font-mono">加载中…</span>
-        </li>
-        <li v-else-if="listItems.length > 12" class="py-6 text-center">
-          <span class="text-2xs text-fg-muted/50 font-mono">— 已显示全部 {{ listItems.length }} 部 —</span>
-        </li>
-      </ul>
+      <!-- 首屏未激活时只显示提示，不渲染 List 内容 -->
+      <div v-if="!listActivated" class="py-12 text-center">
+        <span class="text-2xs text-fg-muted/50 font-mono">滚动到此处加载详细列表</span>
+      </div>
+      <template v-else>
+        <SkeletonList v-if="listStatus === 'loading' && !listItems.length" :count="6" />
+        <ErrorState
+          v-else-if="listStatus === 'error'"
+          :message="listError?.message || '加载失败'"
+          @retry="listRefresh"
+        />
+        <EmptyState
+          v-else-if="!listItems.length"
+          title="本季暂无数据"
+          description="Bangumi 暂未收录本季新番"
+        />
+        <ul v-else class="divide-y divide-border">
+          <li v-for="anime in visibleList" :key="`list-${anime.id}`">
+            <AnimeCard :anime="anime" layout="list" />
+          </li>
+          <li v-if="hasMore" ref="sentinel" class="py-6 text-center">
+            <span class="text-2xs text-fg-muted/50 font-mono">加载中…</span>
+          </li>
+          <li v-else-if="listItems.length > 12" class="py-6 text-center">
+            <span class="text-2xs text-fg-muted/50 font-mono">— 已显示全部 {{ listItems.length }} 部 —</span>
+          </li>
+        </ul>
+      </template>
     </section>
   </div>
 </template>

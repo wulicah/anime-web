@@ -18,10 +18,15 @@ defineProps<{
 }>()
 
 const displayName = (a: Item) => a.name_cn || a.name
-/** 封面：优先 large（清晰），再 common（中），最后 medium（小），全部走 weserv 代理 */
+/**
+ * 封面：优先 large（清晰），再 common（中），最后 medium（小），全部走 weserv 代理
+ * size=200：Grid 卡片实际渲染宽度 100-150px，2x DPR 下 200w 已足够
+ * 比默认 600w 减少字节 ~70%（80KB → 20KB）
+ */
 const cover = (a: Item) =>
   proxyBangumiImage(
     a.images?.large || a.images?.common || a.images?.medium || a.images?.grid || a.images?.small || '',
+    200,
   )
 </script>
 

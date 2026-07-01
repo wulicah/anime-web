@@ -41,7 +41,10 @@ async function doFetch<T>(url: string, init?: RequestInit): Promise<T> {
   const fullUrl = `${BASE_URL}${url}`
   const doFetch = async (): Promise<Response> => {
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 15000)
+    // 8s 超时：原 15s 太长，首屏用户等待 15s 已经放弃
+    // 8s 足够 Bangumi API + CF Pages 代理链路（实测 P95 < 5s）
+    // 配合下方重试 1 次，总等待最长 ~16s，比原 30s 体验好
+    const timeout = setTimeout(() => controller.abort(), 8000)
     try {
       return await fetch(fullUrl, {
         ...init,

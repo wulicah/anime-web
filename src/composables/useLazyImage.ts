@@ -6,6 +6,11 @@ import { ref, onMounted, onUnmounted, watch, type Ref } from 'vue'
  * - 最多 N 张同时下载，避免 50 张同时请求导致排队
  * - 配合 useInfiniteScroll 用：滚动到底再加 12 个，不会一次渲染 50 个
  *
+ * 并发数选择 6 的依据：
+ * - 浏览器对同一域名 HTTP/1.1 默认 6 并发，HTTP/2 多路复用但 CF Pages 也有限制
+ * - 4 → 6 后首屏 12 张图片分 2 批而非 3 批，减少 ~30% 等待
+ * - 太高（如 10）会让同域 API 请求排队，反而不利
+ *
  * 用法：
  *   const { visible, loaded, target } = useLazyImage({ maxConcurrent: 4 })
  *   <img ref="target" :src="visible ? realSrc : ''" />
@@ -30,7 +35,7 @@ function processQueue() {
   }
 }
 
-let MAX_CONCURRENT = 4
+let MAX_CONCURRENT = 6
 
 export function setMaxConcurrent(n: number) {
   MAX_CONCURRENT = n
