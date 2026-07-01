@@ -146,11 +146,9 @@ function crewInfo(a: Item): CrewRow[] {
           {{ anime.name }}
         </p>
         <div class="mt-1 flex items-center flex-wrap gap-x-3 gap-y-1 text-2xs text-fg-muted">
-          <span v-if="airdate(anime) !== '未定'" class="font-mono">首播 {{ airdate(anime) }}</span>
           <span v-if="anime.eps || anime.total_episodes" class="font-mono">全 {{ anime.eps || anime.total_episodes }} 集</span>
-          <span v-if="score(anime)" class="text-accent font-mono">★ {{ score(anime) }}</span>
         </div>
-        <div class="mt-1 flex flex-wrap gap-1.5">
+        <div class="mt-1 flex flex-wrap items-center gap-1.5">
           <span
             v-for="p in displayPlatforms(anime)"
             :key="`p-${p}`"
@@ -161,13 +159,11 @@ function crewInfo(a: Item): CrewRow[] {
             :key="`t-${t}`"
             class="text-2xs px-1.5 py-0.5 text-accent/80 bg-accent/5 border border-accent/20"
           >{{ t }}</span>
+          <span
+            v-if="score(anime)"
+            class="text-2xs text-accent font-mono"
+          >★ {{ score(anime) }}</span>
         </div>
-        <dl v-if="crewInfo(anime).length" class="mt-1 grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-2xs">
-          <template v-for="(row, idx) in crewInfo(anime).slice(0, 4)" :key="idx">
-            <dt class="text-fg-muted/70 whitespace-nowrap">{{ row.key }}</dt>
-            <dd class="text-fg-muted text-ellipsis">{{ row.value }}</dd>
-          </template>
-        </dl>
       </div>
     </article>
   </RouterLink>
