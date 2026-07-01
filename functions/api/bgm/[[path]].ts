@@ -13,10 +13,18 @@
  *
  * 缓存策略：
  * - GET 请求边缘缓存 5 分钟（bangumi 数据更新不频繁）
+ *
+ * 部署配置（Cloudflare Pages 后台 → Settings → Environment variables）：
+ *   APP_VERSION  = 0.1.0              (可选,用于 User-Agent)
+ *   PROJECT_REPO = your-name/anime-web (可选,用于 User-Agent)
+ *   不设置则使用下面的默认值
+ *   ⚠️ 注意：环境变量保存后必须**重新部署**一次才会生效（CF Pages 限制）
  */
 const BANGUMI_API = 'https://api.bgm.tv'
 const CACHE_TTL = 300
 const MAX_RETRIES = 2
+const DEFAULT_APP_VERSION = '0.1.0'
+const DEFAULT_PROJECT_REPO = 'your-name/anime-web'
 
 const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',

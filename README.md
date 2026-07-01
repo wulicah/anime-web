@@ -9,6 +9,9 @@
 ![tech](https://img.shields.io/badge/Vite-5.4-646cff)
 ![tech](https://img.shields.io/badge/TypeScript-5.5-3178c6)
 ![tech](https://img.shields.io/badge/PWA-Ready-ff6e5a)
+![license](https://img.shields.io/badge/license-MIT-blue)
+
+[English](#english) | 中文
 
 ---
 
@@ -78,21 +81,13 @@ anime-web/
 │   └── favicon.svg
 ├── src/
 │   ├── api/                 # API 抽象层
-│   │   ├── bangumi.ts       # Bangumi.tv 公开 API
-│   │   ├── local.ts         # IndexedDB 本地 API
-│   │   ├── platforms.ts     # 播出平台名称映射
-│   │   └── types.ts
 │   ├── assets/styles/       # 全局样式 + 设计 token
-│   ├── components/
-│   │   ├── anime/           # 番剧相关组件
-│   │   ├── common/          # 通用组件（按钮/骨架/空态/错误）
-│   │   ├── layout/          # 头部/TabBar/安装提示
-│   │   └── library/         # 追番库相关（评分/状态切换）
+│   ├── components/          # anime / common / layout / library
 │   ├── composables/         # useQuery / useImage / useInfiniteScroll / useLazyImage
 │   ├── data/                # 季度元信息
 │   ├── db/                  # Dexie 数据库
 │   ├── router/              # 路由配置
-│   ├── stores/              # Pinia 状态（library / preferences）
+│   ├── stores/              # Pinia 状态
 │   ├── views/               # 8 个页面 + 404
 │   ├── App.vue
 │   └── main.ts
@@ -102,6 +97,8 @@ anime-web/
 ├── tsconfig.json
 ├── package.json
 ├── DEPLOY.md                # 部署指南
+├── ISSUES.md                # 决策记录
+├── LICENSE                  # MIT
 └── README.md
 ```
 
@@ -163,7 +160,7 @@ npm run typecheck   # 仅类型检查
 
 ## 📝 License
 
-MIT
+MIT — 详见 [LICENSE](./LICENSE) 文件。
 
 ---
 
@@ -173,3 +170,104 @@ MIT
 - 设计灵感：[yuc.wiki](https://yuc.wiki) 站长 nagatoyuc
 - 图标：内联 SVG，参考 Lucide
 - 字体：系统字体（PingFang SC / 思源宋体 SC / Microsoft YaHei 等），不依赖网络
+
+---
+
+<a id="english"></a>
+
+## 🇬🇧 English
+
+> A personal anime tracking & information site, inspired by [yuc.wiki](https://yuc.wiki/).
+> Seasonal anime schedule + personal library + ratings + comments + offline PWA.
+> A zero-backend, mobile-first, installable anime info site built as a frontend portfolio piece.
+
+### Quick Start
+
+```bash
+npm install        # install deps
+npm run dev        # → http://localhost:5173
+npm run build      # type-check + production build
+npm run preview    # preview production build
+```
+
+Requires Node 18+ (20 / 22 recommended).
+
+### Core Features
+
+| Page | Route | Description |
+|------|-------|-------------|
+| Home | `/` | Today's releases + weekly switcher |
+| Detail | `/anime/:id` | Header + synopsis + tags + tracking + rating |
+| Library | `/library` | 4 states: watching / want / watched / dropped |
+| Search | `/search` | 300ms debounce + recent search history |
+| Archive | `/archive` | Historical seasonal anime (tribute to yuc.wiki) |
+| Season | `/archive/:year/:season` | Browse by season with incremental loading |
+| Profile | `/profile` | Stats + theme switch + data export/clear |
+
+### Tech Stack
+
+- **Vue 3.5** + `<script setup>` + Composition API
+- **Vite 5** + Rollup + code splitting
+- **TypeScript 5.5** strict mode
+- **Pinia 2** state management (theme, library)
+- **Vue Router 4** lazy-loaded routes
+- **VueUse 11** composable utilities
+- **Tailwind CSS 3** utility-first + design tokens
+- **Dexie 4** IndexedDB wrapper (local library storage)
+- **vite-plugin-pwa** + Workbox offline strategies
+
+**Not used:** React, Nuxt, Element Plus, Axios, Sass.
+
+### Design Style
+
+**Japanese Editorial** — combining the warmth of a blog with the restraint of a modern product.
+
+- Palette: cream `#F4F1EC` / vermilion `#E63B2E` (light) · deep black `#161616` / warm orange `#FF6E5A` (dark)
+- Typography: system fonts (PingFang SC / Noto Serif SC / Microsoft YaHei), no network requests
+- Border radius: 0 (editorial feel), 1px hairlines for separation
+- Micro-interactions: 200ms route fade-in, card hover border turns red
+
+### Development Commands
+
+```bash
+npm run dev         # dev server with HMR
+npm run build       # type-check + production build
+npm run preview     # preview production build
+npm run typecheck   # type-check only
+```
+
+### Performance (Production Build)
+
+| Metric | Actual | Target |
+|--------|--------|--------|
+| main bundle (gzip) | ~5 KB | < 200 KB ✅ |
+| vue chunk (gzip) | ~40 KB | — |
+| vendor chunk (gzip) | ~36 KB | — |
+| First-load JS (gzip) | ~80 KB | < 200 KB ✅ |
+| PWA precache | 26 items / 263 KB | — |
+
+### Deployment
+
+See [DEPLOY.md](./DEPLOY.md) for the full guide. TL;DR:
+1. Push to GitHub
+2. Import repo in Cloudflare Pages
+3. Build command: `npm run build`, output dir: `dist`
+4. Pages Functions auto-deploy with the frontend
+
+**Optional environment variables** (set in Cloudflare Pages → Settings → Environment variables):
+- `ALLOWED_ORIGIN` — CORS origin for image proxy (e.g. `https://your-name.pages.dev`)
+- `APP_VERSION` — version string for User-Agent
+- `PROJECT_REPO` — GitHub repo path for User-Agent
+
+> ⚠️ **Note:** After saving environment variables in Cloudflare Pages, you must trigger a **re-deployment** for them to take effect. This is a Cloudflare Pages limitation.
+
+### License
+
+MIT — see [LICENSE](./LICENSE) file for details.
+
+### Credits
+
+- Data: [Bangumi.tv](https://bgm.tv) public API
+- Design inspiration: [yuc.wiki](https://yuc.wiki) by nagatoyuc
+- Icons: inline SVG, inspired by Lucide
+- Fonts: system fonts (no network dependency)
