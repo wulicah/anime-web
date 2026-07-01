@@ -38,13 +38,13 @@ const id = computed(() => props.src || '')
 
 /**
  * sizes 属性：告诉浏览器图片实际渲染宽度，避免按 100vw 选图导致下载过大
- * - list：容器 w-20 sm:w-24（80px / 96px），加 2x DPR 余量
+ * - list：容器 w-24 sm:w-28（96px / 112px），加 2x DPR 余量
  * - grid：容器随断点变化（33vw → 25vw → 20vw → 16vw）
  * - 默认/未指定：用 width prop 推算
  */
 const sizes = computed(() => {
   if (props.layout === 'list') {
-    return '(min-width: 640px) 96px, 80px'
+    return '(min-width: 640px) 112px, 96px'
   }
   if (props.layout === 'grid') {
     return '(min-width: 1024px) 16vw, (min-width: 768px) 20vw, (min-width: 640px) 25vw, 33vw'
