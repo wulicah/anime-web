@@ -83,20 +83,6 @@ const activeItems = computed<CalendarItem[]>(() => {
 })
 const isEmpty = computed(() => calStatus.value === 'success' && activeItems.value.length === 0)
 
-/**
- * Grid 首屏渲染策略：只渲染前 12 个，其余用 IntersectionObserver 懒加载
- * - 当天番剧通常 10-20 部，一次渲染全部会让首屏图片排队严重
- * - 12 个 + 并发 6 = 2 批，约 1.5s 内全部加载完
- * - 其余的进入视口前 200px 触发渲染
- */
-const GRID_FIRST_SCREEN = 12
-const showAllGrid = ref(false)
-const gridSentinel = ref<HTMLElement | null>(null)
-const displayGridItems = computed<CalendarItem[]>(() =>
-  showAllGrid.value ? activeItems.value : activeItems.value.slice(0, GRID_FIRST_SCREEN),
-)
-const hasMoreGrid = computed(() => activeItems.value.length > GRID_FIRST_SCREEN)
-
 /** 底部 List：按月拉当季全量（带 infobox/meta_tags） */
 const curSeason = getCurrentSeason()
 const SEASON_MONTHS: Record<string, [number, number]> = {
@@ -165,20 +151,6 @@ onMounted(() => {
     { rootMargin: '400px 0px' },
   )
   obs.observe(listSectionRef.value)
-
-  // Grid sentinel：滚动到位置前 200px 时显示全部
-  if (gridSentinel.value) {
-    const gridObs = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
-          showAllGrid.value = true
-          gridObs.disconnect()
-        }
-      },
-      { rootMargin: '200px 0px' },
-    )
-    gridObs.observe(gridSentinel.value)
-  }
 })
 
 /** 当季标识 + 下一季倒计时 */
@@ -263,19 +235,11 @@ function airTimeFor(day: number): string {
           </span>
         </header>
         <ul class="grid grid-cols-3 sm:grid-cols-4 md:grid-cols-5 lg:grid-cols-6 gap-3 md:gap-4">
-          <li v-for="anime in displayGridItems" :key="`cell-${anime.id}`">
+          <li v-for="anime in activeItems" :key="`cell-${anime.id}`">
             <AnimeCell
               :anime="anime"
               :air-time="airTimeFor(activeDay)"
             />
-          </li>
-          <!-- 首屏只渲染 12 个，滚到此处再显示全部 -->
-          <li
-            v-if="hasMoreGrid && !showAllGrid"
-            ref="gridSentinel"
-            class="col-span-full py-4 text-center"
-          >
-            <span class="text-2xs text-fg-muted/50 font-mono">向下滚动加载更多 ({{ activeItems.length - GRID_FIRST_SCREEN }} 部)</span>
           </li>
         </ul>
       </template>
