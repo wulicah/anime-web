@@ -137,13 +137,13 @@ function crewInfo(a: Item): CrewRow[] {
       class="flex gap-3 py-2 hover:bg-bg-elevated/30 transition-colors -mx-2 px-2"
       style="contain: content"
     >
-      <div class="shrink-0 w-24 sm:w-28 aspect-[5/7] overflow-hidden bg-bg-elevated">
+      <div class="shrink-0 w-32 sm:w-36 h-[8.4rem] sm:h-[9.8rem] overflow-hidden bg-bg-elevated">
         <LazyImage
           v-if="cover(anime)"
           :src="cover(anime)"
           :srcset-img="anime.images"
           :alt="displayName(anime)"
-          :width="160"
+          :width="200"
           layout="list"
           fit="contain"
         />
