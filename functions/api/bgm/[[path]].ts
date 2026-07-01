@@ -62,8 +62,12 @@ async function fetchWithRetry(
 }
 
 export const onRequest: PagesFunction = async (context) => {
-  const { request } = context
+  const { request, env } = context
   const url = new URL(request.url)
+
+  // User-Agent 标识:从环境变量读,便于开源后 fork 用户自定义
+  const appVersion = (env.APP_VERSION as string) || DEFAULT_APP_VERSION
+  const projectRepo = (env.PROJECT_REPO as string) || DEFAULT_PROJECT_REPO
 
   if (request.method === 'OPTIONS') {
     return new Response(null, { status: 204, headers: CORS_HEADERS })
@@ -83,7 +87,7 @@ export const onRequest: PagesFunction = async (context) => {
       {
         method: request.method,
         headers: {
-          'User-Agent': 'FanLu/0.1 (https://github.com/wulicah/anime-web)',
+          'User-Agent': `FanLu/${appVersion} (https://github.com/${projectRepo})`,
           Accept: 'application/json',
           ...(request.headers.get('Authorization')
             ? { Authorization: request.headers.get('Authorization')! }

@@ -80,25 +80,16 @@ export default defineConfig(({ mode }) => {
               },
             },
             {
-            // 图片代理（相对路径 /img?url=xxx 或 Worker 域名 /img?url=xxx）
-            // 用 StaleWhileRevalidate 而非 CacheFirst：
-            // - 避免上游错误（如 wsrv.nl 403、CF 屏蔽）被永久缓存到 SW
-            // - 后台异步更新，新版本下次访问生效
-            // - 30 天过期，保证长期更新
-            urlPattern: /\/img\?.*url=/,
-            handler: 'StaleWhileRevalidate',
-            options: {
-              cacheName: 'images',
-              expiration: { maxEntries: 200, maxAgeSeconds: 2592000 },
-            },
-          },
-            {
-              // 字体
-              urlPattern: /^https:\/\/fonts\.(?:googleapis|gstatic)\.com/,
-              handler: 'CacheFirst',
+              // 图片代理（相对路径 /img?url=xxx 或 Worker 域名 /img?url=xxx）
+              // 用 StaleWhileRevalidate 而非 CacheFirst：
+              // - 避免上游错误（如 wsrv.nl 403、CF 屏蔽）被永久缓存到 SW
+              // - 后台异步更新，新版本下次访问生效
+              // - 30 天过期，保证长期更新
+              urlPattern: /\/img\?.*url=/,
+              handler: 'StaleWhileRevalidate',
               options: {
-                cacheName: 'google-fonts',
-                expiration: { maxEntries: 30, maxAgeSeconds: 31536000 },
+                cacheName: 'images',
+                expiration: { maxEntries: 200, maxAgeSeconds: 2592000 },
               },
             },
           ],

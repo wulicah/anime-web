@@ -172,4 +172,4 @@ MIT
 - 数据源：[Bangumi.tv](https://bgm.tv) 公开 API
 - 设计灵感：[yuc.wiki](https://yuc.wiki) 站长 nagatoyuc
 - 图标：内联 SVG，参考 Lucide
-- 字体：[Google Fonts](https://fonts.google.com)（Noto Serif/Sans SC、Fraunces、JetBrains Mono）
+- 字体：系统字体（PingFang SC / 思源宋体 SC / Microsoft YaHei 等），不依赖网络

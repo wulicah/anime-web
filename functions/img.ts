@@ -18,25 +18,33 @@
  *
  * 代价：原图约 200-500KB，wsrv.nl 压缩后约 30-50KB
  * 解决：边缘缓存 30 天，二次访问秒开
+ *
+ * 部署配置（Cloudflare Pages 后台 → Settings → Environment variables）：
+ *   ALLOWED_ORIGIN = https://your-domain.pages.dev
+ *   不设置则默认 * (仅适合开发调试)
  */
 
 const CACHE_TTL = 2592000 // 30 天
-const ALLOWED_ORIGIN = 'https://fanlu.pages.dev'
-
-const CORS_HEADERS = {
-  'Access-Control-Allow-Origin': ALLOWED_ORIGIN,
-  'Access-Control-Allow-Methods': 'GET, OPTIONS',
-  'Access-Control-Max-Age': '86400',
-  'X-Frame-Options': 'DENY',
-  'X-Content-Type-Options': 'nosniff',
-}
+const DEFAULT_ALLOWED_ORIGIN = '*'
+const ALLOWED_IMAGE_HOST = 'lain.bgm.tv'
 
 export const onRequest: PagesFunction = async (context) => {
-  const { request } = context
+  const { request, env } = context
   const url = new URL(request.url)
 
+  // 允许的来源域名,从环境变量读取
+  const allowedOrigin = (env.ALLOWED_ORIGIN as string) || DEFAULT_ALLOWED_ORIGIN
+
+  const corsHeaders = {
+    'Access-Control-Allow-Origin': allowedOrigin,
+    'Access-Control-Allow-Methods': 'GET, OPTIONS',
+    'Access-Control-Max-Age': '86400',
+    'X-Frame-Options': 'DENY',
+    'X-Content-Type-Options': 'nosniff',
+  }
+
   if (request.method === 'OPTIONS') {
-    return new Response(null, { status: 204, headers: CORS_HEADERS })
+    return new Response(null, { status: 204, headers: corsHeaders })
   }
 
   // 取出原始图片 URL
@@ -44,7 +52,7 @@ export const onRequest: PagesFunction = async (context) => {
   if (!targetUrl) {
     return new Response('Missing "url" query parameter', {
       status: 400,
-      headers: CORS_HEADERS,
+      headers: corsHeaders,
     })
   }
 
@@ -55,14 +63,17 @@ export const onRequest: PagesFunction = async (context) => {
   } catch {
     return new Response('Invalid "url" parameter', {
       status: 400,
-      headers: CORS_HEADERS,
+      headers: corsHeaders,
     })
   }
-  if (parsedTarget.hostname !== 'lain.bgm.tv') {
-    return new Response(`Forbidden: only lain.bgm.tv allowed, got "${parsedTarget.hostname}"`, {
-      status: 403,
-      headers: CORS_HEADERS,
-    })
+  if (parsedTarget.hostname !== ALLOWED_IMAGE_HOST) {
+    return new Response(
+      `Forbidden: only ${ALLOWED_IMAGE_HOST} allowed, got "${parsedTarget.hostname}"`,
+      {
+        status: 403,
+        headers: corsHeaders,
+      },
+    )
   }
 
   try {
@@ -79,15 +90,15 @@ export const onRequest: PagesFunction = async (context) => {
     })
 
     if (!response.ok) {
-      return new Response(`Upstream lain.bgm.tv returned ${response.status}`, {
+      return new Response(`Upstream ${ALLOWED_IMAGE_HOST} returned ${response.status}`, {
         status: response.status,
-        headers: CORS_HEADERS,
+        headers: corsHeaders,
       })
     }
 
     // 复制响应内容
     const newResponse = new Response(response.body, response)
-    for (const [k, v] of Object.entries(CORS_HEADERS)) {
+    for (const [k, v] of Object.entries(corsHeaders)) {
       newResponse.headers.set(k, v)
     }
     // 30 天边缘缓存
@@ -98,7 +109,7 @@ export const onRequest: PagesFunction = async (context) => {
     console.error('[Img Proxy Error]', err instanceof Error ? err.message : String(err))
     return new Response('图片代理暂时不可用，请稍后重试', {
       status: 502,
-      headers: CORS_HEADERS,
+      headers: corsHeaders,
     })
   }
 }
