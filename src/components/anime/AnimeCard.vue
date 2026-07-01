@@ -135,6 +135,7 @@ function crewInfo(a: Item): CrewRow[] {
           :alt="displayName(anime)"
           :width="120"
           layout="list"
+          fit="contain"
         />
       </div>
       <div class="min-w-0 flex-1">

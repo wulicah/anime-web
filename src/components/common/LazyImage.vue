@@ -24,8 +24,10 @@ const props = withDefaults(
     width?: number
     /** 是否在网格布局下（影响占位样式） */
     layout?: 'grid' | 'list'
+    /** 图片填充方式：cover 裁切填满 / contain 完整显示（可能留白） */
+    fit?: 'cover' | 'contain'
   }>(),
-  { width: 200 },
+  { width: 200, fit: 'cover' },
 )
 
 const { visible, loaded, target } = useLazyImage({ rootMargin: '150px 0px' })
@@ -82,7 +84,7 @@ watch(visible, (v) => {
       :alt="alt"
       loading="eager"
       decoding="async"
-      class="h-full w-full object-cover lazy-img-loaded"
+      :class="['h-full w-full lazy-img-initialized', fit === 'contain' ? 'object-contain' : 'object-cover']"
     />
   </div>
 </template>
