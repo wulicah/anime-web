@@ -254,10 +254,10 @@ function airTimeFor(day: number): string {
     <section ref="listSectionRef" class="py-6 border-t border-border">
       <header class="mb-3 flex items-baseline justify-between">
         <div>
-          <h2 class="text-sm uppercase tracking-widest text-fg-muted">
+          <h2 class="text-2xl md:text-3xl uppercase tracking-widest text-fg-muted">
             本季新番 · 详细列表
           </h2>
-          <p class="text-2xs text-fg-muted/70 mt-0.5 font-mono">
+          <p class="text-xs text-fg-muted/70 mt-0.5 font-mono">
             {{ currentSeason.year }} · {{ currentSeason.season }} · 全季共 {{ listItems.length }} 部
           </p>
         </div>

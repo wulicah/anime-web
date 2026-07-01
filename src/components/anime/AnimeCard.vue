@@ -152,29 +152,29 @@ function crewInfo(a: Item): CrewRow[] {
         <h3 class="text-sm sm:text-base font-medium text-ellipsis-2 leading-snug group-hover:text-accent transition-colors">
           {{ displayName(anime) }}
         </h3>
-        <p v-if="anime.name && anime.name_cn && anime.name !== anime.name_cn" class="text-2xs text-fg-muted font-mono mt-0.5">
+        <p v-if="anime.name && anime.name_cn && anime.name !== anime.name_cn" class="text-xs text-fg-muted font-mono mt-0.5">
           {{ anime.name }}
         </p>
-        <div class="mt-1 flex items-center flex-wrap gap-x-3 gap-y-1 text-2xs text-fg-muted">
+        <div class="mt-1 flex items-center flex-wrap gap-x-3 gap-y-1 text-xs text-fg-muted">
           <span v-if="anime.eps || anime.total_episodes" class="font-mono">全 {{ anime.eps || anime.total_episodes }} 集</span>
         </div>
         <div class="mt-1 flex flex-wrap items-center gap-1.5">
           <span
-            v-for="p in displayPlatforms(anime)"
-            :key="`p-${p}`"
-            class="text-2xs px-1.5 py-0.5 border border-border text-fg-muted"
-          >{{ p }}</span>
+              v-for="p in displayPlatforms(anime)"
+              :key="`p-${p}`"
+              class="text-xs px-1.5 py-0.5 border border-border text-fg-muted"
+            >{{ p }}</span>
           <span
-            v-for="t in displayTopics(anime)"
-            :key="`t-${t}`"
-            class="text-2xs px-1.5 py-0.5 text-accent/80 bg-accent/5 border border-accent/20"
-          >{{ t }}</span>
+              v-for="t in displayTopics(anime)"
+              :key="`t-${t}`"
+              class="text-xs px-1.5 py-0.5 text-accent/80 bg-accent/5 border border-accent/20"
+            >{{ t }}</span>
           <span
             v-if="score(anime)"
-            class="text-2xs text-accent font-mono ml-auto"
+            class="text-xs text-accent font-mono ml-auto"
           >★ {{ score(anime) }}</span>
         </div>
-        <dl v-if="crewInfo(anime).length" class="mt-1 grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-2xs">
+        <dl v-if="crewInfo(anime).length" class="mt-1 grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-x-2 gap-y-0.5 text-xs">
           <template v-for="(row, idx) in crewInfo(anime).slice(0, 4)" :key="idx">
             <dt class="text-fg-muted/70 whitespace-nowrap">{{ row.key }}</dt>
             <dd class="text-fg-muted text-ellipsis">{{ row.value }}</dd>
