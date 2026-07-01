@@ -62,10 +62,20 @@ const INFOBOX_KEYS: Record<string, string> = {
 }
 
 interface CrewRow { key: string; value: string }
+/**
+ * 需要跳过的冗余 infobox 字段（raw key）
+ * - 中文名：与上方主标题（name_cn）完全重复
+ * - 首播/开播/放送/开始：会被映射为「首播」，与下方「放送开始」字段重复
+ *   （「放送开始」不在该集合中，会保留显示）
+ */
+const SKIP_INFOBOX_KEYS = new Set(['中文名', '首播', '开播', '放送', '开始'])
+
 function crewInfo(a: Item): CrewRow[] {
   if (!a.infobox || !Array.isArray(a.infobox)) return []
   const result: CrewRow[] = []
   for (const row of a.infobox) {
+    // 跳过冗余字段：中文名、首播及其变体
+    if (SKIP_INFOBOX_KEYS.has(row.key)) continue
     const label = INFOBOX_KEYS[row.key] || row.key
     let val: string = ''
     if (typeof row.value === 'string') val = row.value
