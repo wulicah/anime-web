@@ -15,7 +15,7 @@
 
 ---
 
-## 🚀 快速开始
+## 快速开始
 
 ```bash
 # 安装依赖
@@ -36,7 +36,7 @@ npm run preview
 
 ---
 
-## ✨ 核心功能
+## 核心功能
 
 | 页面 | 路由 | 功能 |
 |------|------|------|
@@ -47,10 +47,16 @@ npm run preview
 | 归档 | `/archive` | 历年季度新番入口（致敬 yuc.wiki） |
 | 季度归档 | `/archive/:year/:season` | 按季度浏览番剧列表 |
 | 个人中心 | `/profile` | 数据统计 + 主题切换 + 数据导出/清空 |
+| 离线 PWA | Service Worker | 静态资源预缓存 + 图片 StaleWhileRevalidate + 可安装 |
+
+### 基础设施
+
+- **Bangumi API 代理** — Cloudflare Pages Functions 转发 `/api/bgm/*`，解决 CORS 与网络可达性，支持 12s 超时 + 3 次自动重试 + 增量加载
+- **图片代理** — 边缘函数 `/img?url=` 代理 lain.bgm.tv 图片，域名白名单校验 + 30 天缓存，支持 CDN 路径缩放（`/r/200/`）、srcset 响应式档位与 IntersectionObserver 懒加载（6 并发限制）
 
 ---
 
-## 🏗️ 技术栈
+## 技术栈
 
 - **Vue 3.5** + `<script setup>` + Composition API
 - **Vite 6** + Rollup + 代码分割
@@ -58,37 +64,64 @@ npm run preview
 - **Pinia 2** 状态管理（主题、追番库）
 - **Vue Router 4** 懒加载路由
 - **VueUse 11** Composable 工具集
+- **dayjs** 日期处理（季度数据生成、归档页面）
 - **Tailwind CSS 3** 原子化样式 + 设计 token
 - **Dexie 4** IndexedDB 封装（追番库本地存储）
-- **vite-plugin-pwa 0.21** + Workbox 离线策略
+- **vite-plugin-pwa 0.21** + Workbox（预缓存 + StaleWhileRevalidate 图片策略）
 - **Cloudflare Pages Functions** 边缘 API 代理（Bangumi 代理 + 图片代理）
 
-**没有用：** React、Nuxt、Element Plus、Axios、Sass。
+**没有用：** React、Nuxt、Element Plus、Axios、Sass、Google Fonts。
 
 ---
 
-## 📂 项目结构
+## 项目结构
 
 ```
 anime-web/
-├── functions/               # Cloudflare Pages Functions
-│   ├── api/bgm/[[path]].ts  # Bangumi API 代理（CORS + 重试 + 缓存）
-│   ├── img.ts               # 图片代理（域名白名单 + 30 天缓存）
+├── functions/                  # Cloudflare Pages Functions
+│   ├── api/bgm/[[path]].ts     # Bangumi API 代理（CORS + 重试 + 缓存）
+│   ├── img.ts                  # 图片代理（域名白名单 + 30 天缓存）
 │   └── tsconfig.json
 ├── public/
-│   ├── data/seasons.json    # 季度静态补全数据
-│   ├── icons/               # PWA 图标
+│   ├── data/seasons.json       # 季度静态补全数据
+│   ├── icons/                  # PWA SVG 图标
 │   └── favicon.svg
 ├── src/
-│   ├── api/                 # API 抽象层（bangumi / local / platforms / types）
-│   ├── assets/styles/       # 全局样式 + 设计 token
-│   ├── components/          # anime / common / layout / library
-│   ├── composables/         # useQuery / useImage / useInfiniteScroll / useLazyImage
-│   ├── data/                # 季度元信息
-│   ├── db/                  # Dexie 数据库
-│   ├── router/              # 路由配置
-│   ├── stores/              # Pinia 状态
-│   ├── views/               # 8 个页面 + 404
+│   ├── api/                    # API 抽象层
+│   │   ├── bangumi.ts          #   bangumi 接口封装（calendar / search / anime / seasonal）
+│   │   ├── local.ts            #   本地化类型标注
+│   │   ├── platforms.ts        #   平台名称映射 & 放送渠道
+│   │   └── types.ts            #   Bangumi 类型定义
+│   ├── assets/styles/
+│   │   └── main.css            # 全局样式 + CSS 变量设计 token
+│   ├── components/
+│   │   ├── anime/              #   AnimeCard（grid + list 双模式）、AnimeCell（Grid 封面）
+│   │   ├── common/             #   EmptyState / ErrorState / ErrorBoundary / SkeletonList / LazyImage / IconTheme
+│   │   ├── layout/             #   AppHeader / MobileTabBar / InstallPrompt
+│   │   └── library/            #   StatusPicker（追番状态选择器）、RatingStars（星级评分）
+│   ├── composables/
+│   │   ├── useQuery.ts         #   数据请求（缓存 + 过期 + 刷新）
+│   │   ├── useImage.ts         #   图片代理 URL 转换
+│   │   ├── useInfiniteScroll.ts #   增量分页（IntersectionObserver）
+│   │   └── useLazyImage.ts     #   图片懒加载（6 并发）
+│   ├── data/
+│   │   └── seasonMeta.ts       # 季度元信息 & 当季计算
+│   ├── db/
+│   │   └── index.ts            # Dexie IndexedDB 追番库
+│   ├── router/
+│   │   └── index.ts            # Vue Router 懒加载配置
+│   ├── stores/
+│   │   ├── library.ts          #   追番库 Pinia store
+│   │   └── preferences.ts     #   主题偏好 Pinia store
+│   ├── views/
+│   │   ├── HomeView.vue        #   首页（Grid + List）
+│   │   ├── AnimeDetailView.vue #   番剧详情
+│   │   ├── SearchView.vue      #   搜索
+│   │   ├── LibraryView.vue     #   我的追番
+│   │   ├── ArchiveView.vue     #   归档入口
+│   │   ├── ArchiveSeasonView.vue # 季度归档
+│   │   ├── ProfileView.vue     #   个人中心
+│   │   └── NotFoundView.vue    #   404
 │   ├── App.vue
 │   └── main.ts
 ├── index.html
@@ -96,25 +129,25 @@ anime-web/
 ├── tailwind.config.ts
 ├── tsconfig.json
 ├── package.json
-├── DEPLOY.md                # 部署指南
-├── LICENSE                  # MIT
+├── DEPLOY.md                   # 部署指南
+├── LICENSE                     # MIT
 └── README.md
 ```
 
 ---
 
-## 🎨 设计风格
+## 设计风格
 
 **日式编辑设计 (Japanese Editorial)** —— 兼具博客的温度感与现代产品的克制。
 
 - 配色：米白 / 深黑（浅色）· 深黑 / 暖橙（深色），通过 CSS 变量实现双主题
 - 字体：系统字体（PingFang SC / 思源宋体 SC / Microsoft YaHei / JetBrains Mono），零网络请求
 - 圆角：0（保持编辑感），用 1px 细线分割
-- 微动效：路由切换 200ms 淡入上移，卡片 hover 边框变红
+- 微动效：路由切换 200ms 淡入上移，卡片 hover 强调色过渡
 
 ---
 
-## 🛠️ 开发命令
+## 开发命令
 
 ```bash
 npm run dev         # 启动 dev server (HMR)
@@ -125,42 +158,31 @@ npm run typecheck   # 仅类型检查
 
 ---
 
-## 📊 性能指标（生产构建）
-
-| 指标 | 实测 | 目标 |
-|------|------|------|
-| main bundle（gzip） | ~5 KB | < 200 KB ✅ |
-| vue chunk（gzip） | ~40 KB | — |
-| vendor chunk（gzip） | ~36 KB | — |
-| 首屏 JS 总计（gzip） | ~80 KB | < 200 KB ✅ |
-| PWA precache | 26 项 / ~260 KB | — |
-
----
-
-## 🚢 部署
+## 部署
 
 详见 [DEPLOY.md](./DEPLOY.md)。TL;DR：
 
 1. 推送代码到 GitHub
 2. Cloudflare Pages 导入项目
 3. 构建命令：`npm run build`，输出目录：`dist`
-4. Pages Functions 随前端自动部署
+4. Pages Functions 随前端自动部署（无需额外配置）
+5. SPA 路由靠 CF Pages 自动回退（无需 `_redirects`）
 
 **可选环境变量**（Cloudflare Pages → Settings → Environment variables，保存后需手动重新部署）：
 
-- `ALLOWED_ORIGIN` — 图片代理 CORS 来源（如 `https://your-name.pages.dev`）
+- `ALLOWED_ORIGIN` — 图片代理 CORS 来源（默认 `*`）
 - `APP_VERSION` — User-Agent 版本标识
-- `PROJECT_REPO` — User-Agent 仓库路径
+- `PROJECT_REPO` — User-Agent 仓库路径（如 `wulicah/anime-web`）
 
 ---
 
-## 📝 License
+## License
 
 MIT — 详见 [LICENSE](./LICENSE) 文件。
 
 ---
 
-## 🙏 致谢
+## 致谢
 
 - 数据源：[Bangumi.tv](https://bgm.tv) 公开 API
 - 设计灵感：[yuc.wiki](https://yuc.wiki) 站长 nagatoyuc
@@ -171,7 +193,7 @@ MIT — 详见 [LICENSE](./LICENSE) 文件。
 
 <a id="english"></a>
 
-## 🇬🇧 English
+## English
 
 > A personal anime tracking & information site, inspired by [yuc.wiki](https://yuc.wiki/).
 > Seasonal anime schedule + personal library + ratings + offline PWA.
@@ -200,6 +222,11 @@ Requires Node 18+ (20 / 22 recommended).
 | Season | `/archive/:year/:season` | Browse by season |
 | Profile | `/profile` | Stats + theme switch + data export/clear |
 
+#### Infrastructure
+
+- **Bangumi API Proxy** — Cloudflare Pages Functions forward `/api/bgm/*` with CORS, 12s timeout, 3 retries, incremental loading
+- **Image Proxy** — Edge function `/img?url=` proxies lain.bgm.tv images with domain whitelist, 30-day cache, CDN path scaling, srcset responsive breakpoints, and IntersectionObserver lazy loading (6-concurrent limit)
+
 ### Tech Stack
 
 - **Vue 3.5** + `<script setup>` + Composition API
@@ -208,12 +235,13 @@ Requires Node 18+ (20 / 22 recommended).
 - **Pinia 2** state management (theme, library)
 - **Vue Router 4** lazy-loaded routes
 - **VueUse 11** composable utilities
+- **dayjs** date handling (season metadata, archive pages)
 - **Tailwind CSS 3** utility-first + design tokens
 - **Dexie 4** IndexedDB wrapper (local library)
-- **vite-plugin-pwa 0.21** + Workbox offline strategies
-- **Cloudflare Pages Functions** edge API proxy
+- **vite-plugin-pwa 0.21** + Workbox (precache + StaleWhileRevalidate image strategy)
+- **Cloudflare Pages Functions** edge API proxy (Bangumi proxy + image proxy)
 
-**Not used:** React, Nuxt, Element Plus, Axios, Sass.
+**Not used:** React, Nuxt, Element Plus, Axios, Sass, Google Fonts.
 
 ### Design Style
 
@@ -222,7 +250,7 @@ Requires Node 18+ (20 / 22 recommended).
 - Palette: CSS custom properties for light/dark themes
 - Typography: system fonts only (zero network requests)
 - Border radius: 0 (editorial feel), 1px hairlines for separation
-- Micro-interactions: 200ms route fade-in, card hover accent border
+- Micro-interactions: 200ms route fade-in, card hover accent transition
 
 ### Development Commands
 
@@ -233,28 +261,19 @@ npm run preview     # preview production build
 npm run typecheck   # type-check only
 ```
 
-### Performance (Production Build)
-
-| Metric | Actual | Target |
-|--------|--------|--------|
-| main bundle (gzip) | ~5 KB | < 200 KB ✅ |
-| vue chunk (gzip) | ~40 KB | — |
-| vendor chunk (gzip) | ~36 KB | — |
-| First-load JS (gzip) | ~80 KB | < 200 KB ✅ |
-| PWA precache | 26 items / ~260 KB | — |
-
 ### Deployment
 
 See [DEPLOY.md](./DEPLOY.md) for the full guide. TL;DR:
 1. Push to GitHub
 2. Import repo in Cloudflare Pages
 3. Build command: `npm run build`, output dir: `dist`
-4. Pages Functions auto-deploy with the frontend
+4. Pages Functions auto-deploy with the frontend (no extra config)
+5. SPA routing via CF Pages automatic fallback (no `_redirects` needed)
 
 **Optional environment variables** (set in Cloudflare Pages → Settings → Environment variables; re-deployment required after saving):
-- `ALLOWED_ORIGIN` — CORS origin for image proxy
+- `ALLOWED_ORIGIN` — image proxy CORS origin (default `*`)
 - `APP_VERSION` — version string for User-Agent
-- `PROJECT_REPO` — GitHub repo path for User-Agent
+- `PROJECT_REPO` — GitHub repo path for User-Agent (e.g. `wulicah/anime-web`)
 
 ### License
 
