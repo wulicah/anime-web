@@ -3,6 +3,8 @@ import { defineConfig, loadEnv } from 'vite'
 import vue from '@vitejs/plugin-vue'
 import { VitePWA } from 'vite-plugin-pwa'
 
+import { cloudflare } from "@cloudflare/vite-plugin";
+
 // https://vitejs.dev/config/
 export default defineConfig(({ mode }) => {
   // 关键：手动加载 .env，让 server.proxy 能读到 VITE_PROXY_TARGET
@@ -12,94 +14,91 @@ export default defineConfig(({ mode }) => {
   Object.assign(process.env, env)
 
   return {
-    plugins: [
-      vue(),
-      VitePWA({
-        // 基础配置
-        registerType: 'autoUpdate',
-        includeAssets: ['favicon.svg', 'icons/icon-192.svg'],
-        manifest: {
-          name: '番录 FanLu',
-          short_name: '番录',
-          description: '个人向动漫追踪与资讯站',
-          theme_color: '#F4F1EC',
-          background_color: '#F4F1EC',
-          display: 'standalone',
-          orientation: 'portrait',
-          scope: '/',
-          start_url: '/',
-          lang: 'zh-CN',
-          icons: [
-            {
-              src: '/icons/icon-192.svg',
-              sizes: '192x192',
-              type: 'image/svg+xml',
-              purpose: 'any',
+    plugins: [vue(), VitePWA({
+      // 基础配置
+      registerType: 'autoUpdate',
+      includeAssets: ['favicon.svg', 'icons/icon-192.svg'],
+      manifest: {
+        name: '番录 FanLu',
+        short_name: '番录',
+        description: '个人向动漫追踪与资讯站',
+        theme_color: '#F4F1EC',
+        background_color: '#F4F1EC',
+        display: 'standalone',
+        orientation: 'portrait',
+        scope: '/',
+        start_url: '/',
+        lang: 'zh-CN',
+        icons: [
+          {
+            src: '/icons/icon-192.svg',
+            sizes: '192x192',
+            type: 'image/svg+xml',
+            purpose: 'any',
+          },
+          {
+            src: '/icons/icon-512.svg',
+            sizes: '512x512',
+            type: 'image/svg+xml',
+            purpose: 'any maskable',
+          },
+        ],
+      },
+      // Workbox 运行时缓存
+      workbox: {
+        skipWaiting: true,    // 新 SW 立即激活（避免用户卡在旧版）
+        clientsClaim: true,   // 通知所有标签页立即切换到新 SW
+        globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
+        navigateFallback: '/index.html',
+        runtimeCaching: [
+          {
+            // Bangumi API GET 缓存
+            urlPattern: /^https:\/\/api\.bgm\.tv\/v0\/subjects\/\d+$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'anime-detail',
+              expiration: { maxEntries: 200, maxAgeSeconds: 86400 * 7 },
             },
-            {
-              src: '/icons/icon-512.svg',
-              sizes: '512x512',
-              type: 'image/svg+xml',
-              purpose: 'any maskable',
+          },
+          {
+            // 每日新番
+            urlPattern: /^https:\/\/api\.bgm\.tv\/calendar$/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'anime-calendar',
+              expiration: { maxEntries: 1, maxAgeSeconds: 86400 },
             },
-          ],
-        },
-        // Workbox 运行时缓存
-        workbox: {
-          skipWaiting: true,    // 新 SW 立即激活（避免用户卡在旧版）
-          clientsClaim: true,   // 通知所有标签页立即切换到新 SW
-          globPatterns: ['**/*.{js,css,html,svg,png,ico,woff2}'],
-          navigateFallback: '/index.html',
-          runtimeCaching: [
-            {
-              // Bangumi API GET 缓存
-              urlPattern: /^https:\/\/api\.bgm\.tv\/v0\/subjects\/\d+$/,
-              handler: 'StaleWhileRevalidate',
-              options: {
-                cacheName: 'anime-detail',
-                expiration: { maxEntries: 200, maxAgeSeconds: 86400 * 7 },
-              },
+          },
+          {
+            // 搜索
+            urlPattern: /^https:\/\/api\.bgm\.tv\/v0\/search/,
+            handler: 'NetworkFirst',
+            options: {
+              cacheName: 'anime-search',
+              networkTimeoutSeconds: 3,
+              expiration: { maxEntries: 50, maxAgeSeconds: 86400 },
             },
-            {
-              // 每日新番
-              urlPattern: /^https:\/\/api\.bgm\.tv\/calendar$/,
-              handler: 'StaleWhileRevalidate',
-              options: {
-                cacheName: 'anime-calendar',
-                expiration: { maxEntries: 1, maxAgeSeconds: 86400 },
-              },
+          },
+          {
+            // 图片代理（相对路径 /img?url=xxx 或 Worker 域名 /img?url=xxx）
+            // 用 StaleWhileRevalidate 而非 CacheFirst：
+            // - 避免上游错误（如 wsrv.nl 403、CF 屏蔽）被永久缓存到 SW
+            // - 后台异步更新，新版本下次访问生效
+            // - 30 天过期，保证长期更新
+            urlPattern: /\/img\?.*url=/,
+            handler: 'StaleWhileRevalidate',
+            options: {
+              cacheName: 'images',
+              expiration: { maxEntries: 200, maxAgeSeconds: 2592000 },
             },
-            {
-              // 搜索
-              urlPattern: /^https:\/\/api\.bgm\.tv\/v0\/search/,
-              handler: 'NetworkFirst',
-              options: {
-                cacheName: 'anime-search',
-                networkTimeoutSeconds: 3,
-                expiration: { maxEntries: 50, maxAgeSeconds: 86400 },
-              },
-            },
-            {
-              // 图片代理（相对路径 /img?url=xxx 或 Worker 域名 /img?url=xxx）
-              // 用 StaleWhileRevalidate 而非 CacheFirst：
-              // - 避免上游错误（如 wsrv.nl 403、CF 屏蔽）被永久缓存到 SW
-              // - 后台异步更新，新版本下次访问生效
-              // - 30 天过期，保证长期更新
-              urlPattern: /\/img\?.*url=/,
-              handler: 'StaleWhileRevalidate',
-              options: {
-                cacheName: 'images',
-                expiration: { maxEntries: 200, maxAgeSeconds: 2592000 },
-              },
-            },
-          ],
-        },
-        // 开发模式注入（方便调试）
-        devOptions: {
-          enabled: false,
-        },
-      }),
-    ],
+          },
+        ],
+      },
+      // 开发模式注入（方便调试）
+      devOptions: {
+        enabled: false,
+      },
+    }), cloudflare()],
     resolve: {
       alias: {
         '@': fileURLToPath(new URL('./src', import.meta.url)),
@@ -128,7 +127,7 @@ export default defineConfig(({ mode }) => {
           rewrite: (path) => {
             // path = /api/bgm/v0/subjects/520633
             // 代理路径：/api/bgm/v0/subjects/520633（去掉 /api/bgm 前缀）
-            return path.replace(/^\/api\/bgm/, '')
+            return path.replace(/^\/api\/bgm/, '');
           },
           configure: (proxy) => {
             proxy.on('error', (err, _req, res: any) => {
@@ -172,7 +171,7 @@ export default defineConfig(({ mode }) => {
               process.env.VITE_IMG_PROXY_TARGET || env.VITE_IMG_PROXY_TARGET || ''
             if (target) return path
             // wsrv.nl 格式：/?url=encoded_url
-            return path.replace(/^\/img/, '')
+            return path.replace(/^\/img/, '');
           },
           configure: (proxy) => {
             proxy.on('error', (err, _req, res: any) => {
@@ -199,5 +198,5 @@ export default defineConfig(({ mode }) => {
         },
       },
     },
-  }
+  };
 })
