@@ -130,6 +130,7 @@ anime-web/
 ├── tsconfig.json
 ├── package.json
 ├── DEPLOY.md                   # 部署指南
+├── TROUBLESHOOTING.md          # 踩坑日志（14 个真实问题 + 排查思路）
 ├── LICENSE                     # MIT
 └── README.md
 ```
@@ -155,6 +156,14 @@ npm run build       # 类型检查 + 生产构建
 npm run preview     # 预览生产构建
 npm run typecheck   # 仅类型检查
 ```
+
+---
+
+## 踩坑日志
+
+项目从 0 到 1 过程中真实遇到并解决的 14 个问题（前端直连 bangumi API、wsrv.nl 黑名单、srcset 缺 sizes、CF Pages SPA fallback、Service Worker 缓存错误响应、vite-plugin-pwa 兼容性、仓库脱敏审计等），每条按「现象 → 排查 → 根因 → 解决 → 收获」整理。
+
+详见 [TROUBLESHOOTING.md](./TROUBLESHOOTING.md)。
 
 ---
 
